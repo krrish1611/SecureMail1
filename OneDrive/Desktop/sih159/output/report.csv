@@ -1,0 +1,9 @@
+Session ID,Protocol,Server IP,Server Port,Client IP,Client Port,Encrypted,STARTTLS Status,Plaintext Credentials,JA3,JA4,JA4S,JA4X,MTA-STS Status,DANE Status,Posture Score,Risk Label,Findings
+6e2b7b6ee35e,smtp,10.0.0.1,25,10.0.0.2,49100,True,Req:True|Upg:True|Str:False,False,,,t120000_0005_000000000000,,not_evaluated,not_evaluated,57.0,high,"[cipher.rc4] Weak cipher suite in use (CRITICAL) [CWE-CWE-327] - Remove weak cipher suites from the server's TLS configuration.
+[tls.keyex.no_fs] No forward secrecy (static key exchange) (HIGH) [CWE-CWE-327] - Enable ephemeral key exchange (ECDHE/DHE) with forward secrecy."
+61e544c81dac,imap,10.0.0.1,143,10.0.0.3,49200,True,Req:False|Upg:False|Str:False,False,87e6f9d8ed4c1f40e545b4804251ffbb,t10i010000_692296a295db_000000000000,t100000_0035_000000000000,,not_evaluated,not_evaluated,55.4,high,"[tls.10] Obsolete TLS 1.0 negotiated (HIGH) [CWE-CWE-326] - Disable TLS 1.0 on the server; require TLS 1.2+.
+[tls.cipher.cbc_sha1] Non-AEAD CBC cipher negotiated (MEDIUM) [CWE-CWE-327] - Prefer AEAD suites such as AES-GCM or ChaCha20-Poly1305.
+[tls.keyex.no_fs] No forward secrecy (static key exchange) (HIGH) [CWE-CWE-327] - Enable ephemeral key exchange (ECDHE/DHE) with forward secrecy."
+185c3888382b,pop3,10.0.0.1,110,10.0.0.4,49300,True,Req:False|Upg:False|Str:False,False,c0fa996cd90cf490c422cc5e3291cddc,t13i020200_62ed6f6ca7ad_efa03c98e060,t130100_1301_d5d54e22bb3e,,not_evaluated,not_evaluated,88.8,medium,
+0d90696c884a,smtp,10.0.0.1,25,10.0.0.5,49400,False,Req:False|Upg:False|Str:False,True,,,,,not_evaluated,not_evaluated,45.8,critical,"[starttls.missing] No encryption (STARTTLS not used) (HIGH) [CWE-CWE-319] - Require STARTTLS and reject plaintext sessions.
+[starttls.plaintext_creds] Credentials sent in plaintext (CRITICAL) [CWE-CWE-319] - Never send credentials before the TLS handshake; enforce STARTTLS-before-AUTH."

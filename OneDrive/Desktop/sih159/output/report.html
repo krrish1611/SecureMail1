@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'><title>SecureMailScope Forensic Report</title>
+<style>
+body { font-family: 'Segoe UI', sans-serif; background:#111827; color:#e5e7eb; margin:0; padding:20px; }
+h1 { color:#60a5fa; text-align:center; margin-bottom:5px; }
+h2 { color:#93c5fd; text-align:center; margin-top:0; }
+.report-meta { text-align:center; color:#9ca3af; margin-bottom:20px; }
+.badge-row { text-align:center; margin:20px 0; }
+.session-card { background:#1f2937; border:1px solid #374151; border-radius:10px; padding:20px; margin:20px 0; }
+.detail-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin:10px 0; }
+.tls-block, .cert-block { background:#111827; padding:12px; border-radius:6px; margin:10px 0; }
+h4 { color:#93c5fd; margin-bottom:8px; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+th { text-align:left; color:#60a5fa; border-bottom:1px solid #374151; padding:8px; }
+td { padding:8px; border-bottom:1px solid #1f2937; vertical-align:top; }
+footer { text-align:center; color:#6b7280; margin-top:40px; font-size:0.85em; }
+</style></head>
+<body>
+<h1>SecureMailScope</h1>
+<h2>Cryptographic Security Posture Assessment</h2>
+<div class='report-meta'>Generated: 2026-09-08 17:38:41 UTC | Sessions: 4</div>
+<div class='badge-row'><span class='badge' style='background:#dc2626; color:white; padding:4px 12px; margin:2px; border-radius:12px;'>2 CRITICAL</span><span class='badge' style='background:#ea580c; color:white; padding:4px 12px; margin:2px; border-radius:12px;'>4 HIGH</span><span class='badge' style='background:#ca8a04; color:white; padding:4px 12px; margin:2px; border-radius:12px;'>1 MEDIUM</span><span class='badge' style='background:#0284c7; color:white; padding:4px 12px; margin:2px; border-radius:12px;'>0 LOW</span><span class='badge' style='background:#6b7280; color:white; padding:4px 12px; margin:2px; border-radius:12px;'>0 INFO</span></div>
+
+        <div class='session-card'>
+          <h3>Session: 6e2b7b6ee35e (SMTP)</h3>
+          <div class='detail-grid'>
+            <div><b>Server:</b> 10.0.0.1:25</div>
+            <div><b>Client:</b> 10.0.0.2:49100</div>
+            <div><b>Encrypted:</b> True</div>
+            <div><b>STARTTLS:</b> requested=True upgraded=True stripped=False</div>
+            <div><b>Posture Score:</b> 57.0/100 &nbsp;|&nbsp; <b>Risk:</b> high</div>
+          </div>
+          <div class='tls-block'><h4>TLS Details</h4><b>version:</b> TLSv1.2<br><b>cipher_suite:</b> TLS_RSA_WITH_RC4_128_SHA<br><b>cipher_hex:</b> 0x0005<br><b>key_exchange:</b> RSA (static)<br><b>key_exchange_group:</b> None<br><b>signature_algorithm:</b> None<br><b>server_name:</b> None<br><b>offered_ciphers:</b> []<br><b>extensions:</b> []<br><b>ja3:</b> None<br><b>ja4:</b> None<br><b>ja4s:</b> t120000_0005_000000000000<br></div>
+          <div class='cert-block'><h4>Certificate</h4><i>No certificate</i></div>
+          <div class='dns-block' style='background:#111827; padding:12px; border-radius:6px; margin:10px 0;'><h4>MTA-STS & DANE Downgrade Protection</h4><i>No domain heuristics</i></div>
+          <h4>Findings (2)</h4>
+          <table class='findings-table'><thead><tr><th>Severity</th><th>Finding</th></tr></thead>
+          <tbody><tr><td style='color:#dc2626; font-weight:bold;'>CRITICAL</td><td><b>Weak cipher suite in use</b><br><small>TLS_RSA_WITH_RC4_128_SHA uses RC4: RC4 cipher is broken for all uses; disable it.</small><br><i>Recommendation: Remove weak cipher suites from the server's TLS configuration.</i></td></tr><tr><td style='color:#ea580c; font-weight:bold;'>HIGH</td><td><b>No forward secrecy (static key exchange)</b><br><small>The session used RSA (static) key exchange, which does not provide forward secrecy. A compromised server key could decrypt past traffic.</small><br><i>Recommendation: Enable ephemeral key exchange (ECDHE/DHE) with forward secrecy.</i></td></tr></tbody></table>
+        </div>
+        
+        <div class='session-card'>
+          <h3>Session: 61e544c81dac (IMAP)</h3>
+          <div class='detail-grid'>
+            <div><b>Server:</b> 10.0.0.1:143</div>
+            <div><b>Client:</b> 10.0.0.3:49200</div>
+            <div><b>Encrypted:</b> True</div>
+            <div><b>STARTTLS:</b> requested=False upgraded=False stripped=False</div>
+            <div><b>Posture Score:</b> 55.4/100 &nbsp;|&nbsp; <b>Risk:</b> high</div>
+          </div>
+          <div class='tls-block'><h4>TLS Details</h4><b>version:</b> TLSv1.0<br><b>cipher_suite:</b> TLS_RSA_WITH_AES_256_CBC_SHA<br><b>cipher_hex:</b> 0x0035<br><b>key_exchange:</b> RSA (static)<br><b>key_exchange_group:</b> None<br><b>signature_algorithm:</b> None<br><b>server_name:</b> None<br><b>offered_ciphers:</b> ['TLS_RSA_WITH_AES_256_CBC_SHA']<br><b>extensions:</b> []<br><b>ja3:</b> 87e6f9d8ed4c1f40e545b4804251ffbb<br><b>ja4:</b> t10i010000_692296a295db_000000000000<br><b>ja4s:</b> t100000_0035_000000000000<br></div>
+          <div class='cert-block'><h4>Certificate</h4><i>No certificate</i></div>
+          <div class='dns-block' style='background:#111827; padding:12px; border-radius:6px; margin:10px 0;'><h4>MTA-STS & DANE Downgrade Protection</h4><i>No domain heuristics</i></div>
+          <h4>Findings (3)</h4>
+          <table class='findings-table'><thead><tr><th>Severity</th><th>Finding</th></tr></thead>
+          <tbody><tr><td style='color:#ea580c; font-weight:bold;'>HIGH</td><td><b>Obsolete TLS 1.0 negotiated</b><br><small>TLS 1.0 is deprecated and vulnerable to BEAST and RC4-based attacks.</small><br><i>Recommendation: Disable TLS 1.0 on the server; require TLS 1.2+.</i></td></tr><tr><td style='color:#ca8a04; font-weight:bold;'>MEDIUM</td><td><b>Non-AEAD CBC cipher negotiated</b><br><small>TLS_RSA_WITH_AES_256_CBC_SHA uses CBC mode without authenticated encryption.</small><br><i>Recommendation: Prefer AEAD suites such as AES-GCM or ChaCha20-Poly1305.</i></td></tr><tr><td style='color:#ea580c; font-weight:bold;'>HIGH</td><td><b>No forward secrecy (static key exchange)</b><br><small>The session used RSA (static) key exchange, which does not provide forward secrecy. A compromised server key could decrypt past traffic.</small><br><i>Recommendation: Enable ephemeral key exchange (ECDHE/DHE) with forward secrecy.</i></td></tr></tbody></table>
+        </div>
+        
+        <div class='session-card'>
+          <h3>Session: 185c3888382b (POP3)</h3>
+          <div class='detail-grid'>
+            <div><b>Server:</b> 10.0.0.1:110</div>
+            <div><b>Client:</b> 10.0.0.4:49300</div>
+            <div><b>Encrypted:</b> True</div>
+            <div><b>STARTTLS:</b> requested=False upgraded=False stripped=False</div>
+            <div><b>Posture Score:</b> 88.8/100 &nbsp;|&nbsp; <b>Risk:</b> medium</div>
+          </div>
+          <div class='tls-block'><h4>TLS Details</h4><b>version:</b> TLSv1.3<br><b>cipher_suite:</b> TLS_AES_128_GCM_SHA256<br><b>cipher_hex:</b> 0x1301<br><b>key_exchange:</b> ECDHE<br><b>key_exchange_group:</b> x25519<br><b>signature_algorithm:</b> None<br><b>server_name:</b> None<br><b>offered_ciphers:</b> ['TLS_AES_128_GCM_SHA256', 'TLS_AES_256_GCM_SHA384']<br><b>extensions:</b> ['supported_versions', 'supported_versions', 'key_share']<br><b>ja3:</b> c0fa996cd90cf490c422cc5e3291cddc<br><b>ja4:</b> t13i020200_62ed6f6ca7ad_efa03c98e060<br><b>ja4s:</b> t130100_1301_d5d54e22bb3e<br></div>
+          <div class='cert-block'><h4>Certificate</h4><i>No certificate</i></div>
+          <div class='dns-block' style='background:#111827; padding:12px; border-radius:6px; margin:10px 0;'><h4>MTA-STS & DANE Downgrade Protection</h4><i>No domain heuristics</i></div>
+          <h4>Findings (0)</h4>
+          <table class='findings-table'><thead><tr><th>Severity</th><th>Finding</th></tr></thead>
+          <tbody><tr><td colspan='2' style='text-align:center; color:#6b7280;'>No findings</td></tr></tbody></table>
+        </div>
+        
+        <div class='session-card'>
+          <h3>Session: 0d90696c884a (SMTP)</h3>
+          <div class='detail-grid'>
+            <div><b>Server:</b> 10.0.0.1:25</div>
+            <div><b>Client:</b> 10.0.0.5:49400</div>
+            <div><b>Encrypted:</b> False</div>
+            <div><b>STARTTLS:</b> requested=False upgraded=False stripped=False</div>
+            <div><b>Posture Score:</b> 45.8/100 &nbsp;|&nbsp; <b>Risk:</b> critical</div>
+          </div>
+          <div class='tls-block'><h4>TLS Details</h4><i>No TLS detected</i></div>
+          <div class='cert-block'><h4>Certificate</h4><i>No certificate</i></div>
+          <div class='dns-block' style='background:#111827; padding:12px; border-radius:6px; margin:10px 0;'><h4>MTA-STS & DANE Downgrade Protection</h4><i>No domain heuristics</i></div>
+          <h4>Findings (2)</h4>
+          <table class='findings-table'><thead><tr><th>Severity</th><th>Finding</th></tr></thead>
+          <tbody><tr><td style='color:#ea580c; font-weight:bold;'>HIGH</td><td><b>No encryption (STARTTLS not used)</b><br><small>The email session exchanged data in plaintext without STARTTLS.</small><br><i>Recommendation: Require STARTTLS and reject plaintext sessions.</i></td></tr><tr><td style='color:#dc2626; font-weight:bold;'>CRITICAL</td><td><b>Credentials sent in plaintext</b><br><small>Authentication credentials (AUTH LOGIN) were observed before the TLS upgrade.</small><br><i>Recommendation: Never send credentials before the TLS handshake; enforce STARTTLS-before-AUTH.</i></td></tr></tbody></table>
+        </div>
+        
+
+    <div style='margin:30px 0;'>
+      <h2 style='color:#93c5fd; text-align:center;'>Compliance Matrix</h2>
+      <div style='display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin:20px 0;'>
+        
+        <div style='background:#1f2937; border:1px solid #374151; border-radius:10px;
+                    padding:16px; text-align:center; min-width:200px;'>
+          <div style='font-size:14px; color:#93c5fd; font-weight:bold;'>PCI-DSS 4.0</div>
+          <div style='font-size:24px; font-weight:bold; color:#ef4444; margin:8px 0;'>NON-COMPLIANT</div>
+          <div style='font-size:12px; color:#9ca3af;'>
+            <span style='color:#22c55e;'>✓ 15 passed</span> ·
+            <span style='color:#ef4444;'>✗ 9 failed</span> ·
+            <span style='color:#6b7280;'>— 20 N/A</span>
+          </div>
+        </div>
+        <div style='background:#1f2937; border:1px solid #374151; border-radius:10px;
+                    padding:16px; text-align:center; min-width:200px;'>
+          <div style='font-size:14px; color:#93c5fd; font-weight:bold;'>NIST 800-52r2</div>
+          <div style='font-size:24px; font-weight:bold; color:#ef4444; margin:8px 0;'>NON-COMPLIANT</div>
+          <div style='font-size:12px; color:#9ca3af;'>
+            <span style='color:#22c55e;'>✓ 15 passed</span> ·
+            <span style='color:#ef4444;'>✗ 9 failed</span> ·
+            <span style='color:#6b7280;'>— 20 N/A</span>
+          </div>
+        </div>
+        <div style='background:#1f2937; border:1px solid #374151; border-radius:10px;
+                    padding:16px; text-align:center; min-width:200px;'>
+          <div style='font-size:14px; color:#93c5fd; font-weight:bold;'>HIPAA</div>
+          <div style='font-size:24px; font-weight:bold; color:#ef4444; margin:8px 0;'>NON-COMPLIANT</div>
+          <div style='font-size:12px; color:#9ca3af;'>
+            <span style='color:#22c55e;'>✓ 15 passed</span> ·
+            <span style='color:#ef4444;'>✗ 9 failed</span> ·
+            <span style='color:#6b7280;'>— 20 N/A</span>
+          </div>
+        </div>
+      </div>
+      <table style='width:100%; border-collapse:collapse; margin-top:20px;'>
+        <thead>
+          <tr>
+            <th style='text-align:left; color:#60a5fa; border-bottom:1px solid #374151; padding:8px;'>ID</th>
+            <th style='text-align:left; color:#60a5fa; border-bottom:1px solid #374151; padding:8px;'>Control</th>
+            <th style='text-align:center; color:#60a5fa; border-bottom:1px solid #374151; padding:8px;'>PCI-DSS 4.0</th>
+            <th style='text-align:center; color:#60a5fa; border-bottom:1px solid #374151; padding:8px;'>NIST 800-52r2</th>
+            <th style='text-align:center; color:#60a5fa; border-bottom:1px solid #374151; padding:8px;'>HIPAA</th>
+          </tr>
+        </thead>
+        <tbody><tr><td><b>C01</b></td><td>TLS version >= 1.2</td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>Req 2.2.7, 4.2.1</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§3.1</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§164.312(e)(1)</small></td></tr><tr><td><b>C02</b></td><td>No weak ciphers (RC4/DES/3DES/EXPORT/NULL)</td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>Req 2.2.7, 4.2.1</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§3.3.1</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§164.312(e)(2)(ii)</small></td></tr><tr><td><b>C03</b></td><td>Forward secrecy (ECDHE/DHE)</td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>Req 4.2.1</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§3.3.1</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§164.312(e)(2)(ii)</small></td></tr><tr><td><b>C04</b></td><td>AEAD cipher mode (GCM/ChaCha20)</td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>Req 4.2.1</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§3.3.1</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§164.312(e)(2)(ii)</small></td></tr><tr><td><b>C05</b></td><td>Valid, trusted certificate</td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>Req 4.2.1</small></td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>§3.4</small></td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>§164.312(e)(1)</small></td></tr><tr><td><b>C06</b></td><td>Certificate not expired</td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>Req 4.2.1</small></td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>§3.4</small></td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>§164.312(e)(1)</small></td></tr><tr><td><b>C07</b></td><td>Strong public key (RSA >= 2048 / EC >= 256)</td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>Req 2.2.7</small></td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>§3.2</small></td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>§164.312(e)(2)(ii)</small></td></tr><tr><td><b>C08</b></td><td>No SHA-1 certificate signatures</td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>Req 4.2.1</small></td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>§3.4.3</small></td><td style='text-align:center;'><span style='color:#6b7280; font-weight:bold;'>— N/A</span><br><small style='color:#6b7280;'>§164.312(e)(2)(ii)</small></td></tr><tr><td><b>C09</b></td><td>Encryption required (not plaintext)</td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>Req 4.2.1</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§3.1</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§164.312(e)(1)</small></td></tr><tr><td><b>C10</b></td><td>No plaintext credentials</td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>Req 8.3.2</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§3.5</small></td><td style='text-align:center;'><span style='color:#ef4444; font-weight:bold;'>✗ FAIL</span><br><small style='color:#6b7280;'>§164.312(d)</small></td></tr><tr><td><b>C11</b></td><td>No STARTTLS stripping</td><td style='text-align:center;'><span style='color:#22c55e; font-weight:bold;'>✓ PASS</span><br><small style='color:#6b7280;'>Req 4.2.1</small></td><td style='text-align:center;'><span style='color:#22c55e; font-weight:bold;'>✓ PASS</span><br><small style='color:#6b7280;'>§3.1</small></td><td style='text-align:center;'><span style='color:#22c55e; font-weight:bold;'>✓ PASS</span><br><small style='color:#6b7280;'>§164.312(e)(1)</small></td></tr></tbody>
+      </table>
+    </div>
+<footer>SecureMailScope v0.1.0 — AI-Assisted Cryptographic Security Assessment</footer>
+</body></html>

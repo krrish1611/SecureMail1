@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "securemailscope"
+version = "0.1.0"
+description = "AI-Assisted Cryptographic Security Posture Assessment for Secure Email Communications"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "scapy>=2.5.0",
+    "cryptography>=41.0.0",
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "jinja2>=3.1.0",
+    "reportlab>=4.0.0",
+    "PyYAML>=6.0",
+    "joblib>=1.3.0",
+    "pyshark>=0.6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+securemailscope = "cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "ml*", "reports*", "backend*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+    "ignore:Parsed a serial number which wasn't positive:",
+]

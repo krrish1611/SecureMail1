@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Reports
+*_report.json
+*_report.html
+*_report.pdf
+reports/generated/
+
+# Python test cache
+.pytest_cache/
+
+# ML saved models
+ml/saved_models/
+!ml/saved_models/.gitkeep
+
+# Node
+node_modules/
+frontend/dist/
+
+# OS
+.DS_Store

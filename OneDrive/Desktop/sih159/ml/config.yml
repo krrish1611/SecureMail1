@@ -1,0 +1,26 @@
+# SecureMailScope ML scoring configuration.
+# Adjust these to tune how posture scores and ML blending behave.
+
+posture:
+  # Weight of rule-based findings vs ML component in the final 0..100 score.
+  rule_weight: 0.6
+  ml_weight: 0.4
+
+  # Points deducted per finding severity.
+  severity_deduct_pts:
+    critical: 18.0
+    high: 12.0
+    medium: 6.0
+    low: 3.0
+    info: 1.0
+
+ml:
+  # Confident high-risk/critical predictions lower the ML posture component.
+  # (1 - risk_confidence) * base_range gives the healthy share.
+  clf_base_range: 80.0
+  anomaly_healthy_bonus: 20.0
+
+models:
+  # Number of samples in the anomaly detector baseline distribution.
+  contamination: 0.08
+  n_estimators: 100

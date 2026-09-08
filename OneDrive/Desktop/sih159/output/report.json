@@ -1,0 +1,1563 @@
+{
+  "tool": "SecureMailScope",
+  "version": "0.1.0",
+  "generated_at": "2026-09-08T17:38:41.764163+00:00",
+  "session_count": 4,
+  "sessions": [
+    {
+      "session_id": "6e2b7b6ee35e",
+      "protocol": "smtp",
+      "server_ip": "10.0.0.1",
+      "server_port": 25,
+      "client_ip": "10.0.0.2",
+      "client_port": 49100,
+      "start_ts": 1700000000.049999,
+      "end_ts": 1700000000.109999,
+      "bytes_c2s": 108,
+      "bytes_s2c": 101,
+      "packets": 6,
+      "encrypted": true,
+      "plaintext": false,
+      "starttls_requested": true,
+      "starttls_upgraded": true,
+      "starttls_stripped": false,
+      "credentials_plaintext": false,
+      "auth_command": null,
+      "tls": {
+        "version": "TLSv1.2",
+        "cipher_suite": "TLS_RSA_WITH_RC4_128_SHA",
+        "cipher_hex": "0x0005",
+        "key_exchange": "RSA (static)",
+        "key_exchange_group": null,
+        "signature_algorithm": null,
+        "server_name": null,
+        "offered_ciphers": [],
+        "extensions": [],
+        "ja3": null,
+        "ja4": null,
+        "ja4s": "t120000_0005_000000000000"
+      },
+      "certificate": {},
+      "dns_security": {},
+      "posture_score": 57.0,
+      "risk_label": "high",
+      "ml_score": 0.53,
+      "ml_anomaly": "True",
+      "findings": [
+        {
+          "id": "cipher.rc4",
+          "title": "Weak cipher suite in use",
+          "description": "TLS_RSA_WITH_RC4_128_SHA uses RC4: RC4 cipher is broken for all uses; disable it.",
+          "category": "tls.cipher",
+          "severity": "critical",
+          "recommendation": "Remove weak cipher suites from the server's TLS configuration.",
+          "cwe": "CWE-327",
+          "cve": "CVE-2015-2808"
+        },
+        {
+          "id": "tls.keyex.no_fs",
+          "title": "No forward secrecy (static key exchange)",
+          "description": "The session used RSA (static) key exchange, which does not provide forward secrecy. A compromised server key could decrypt past traffic.",
+          "category": "tls.keyexchange",
+          "severity": "high",
+          "recommendation": "Enable ephemeral key exchange (ECDHE/DHE) with forward secrecy.",
+          "cwe": "CWE-327",
+          "cve": "CVE-2015-4000"
+        }
+      ],
+      "severity_summary": {
+        "critical": 1,
+        "high": 1,
+        "medium": 0,
+        "low": 0,
+        "info": 0
+      }
+    },
+    {
+      "session_id": "61e544c81dac",
+      "protocol": "imap",
+      "server_ip": "10.0.0.1",
+      "server_port": 143,
+      "client_ip": "10.0.0.3",
+      "client_port": 49200,
+      "start_ts": 1700000000.659999,
+      "end_ts": 1700000000.679999,
+      "bytes_c2s": 52,
+      "bytes_s2c": 78,
+      "packets": 3,
+      "encrypted": true,
+      "plaintext": false,
+      "starttls_requested": false,
+      "starttls_upgraded": false,
+      "starttls_stripped": false,
+      "credentials_plaintext": false,
+      "auth_command": null,
+      "tls": {
+        "version": "TLSv1.0",
+        "cipher_suite": "TLS_RSA_WITH_AES_256_CBC_SHA",
+        "cipher_hex": "0x0035",
+        "key_exchange": "RSA (static)",
+        "key_exchange_group": null,
+        "signature_algorithm": null,
+        "server_name": null,
+        "offered_ciphers": [
+          "TLS_RSA_WITH_AES_256_CBC_SHA"
+        ],
+        "extensions": [],
+        "ja3": "87e6f9d8ed4c1f40e545b4804251ffbb",
+        "ja4": "t10i010000_692296a295db_000000000000",
+        "ja4s": "t100000_0035_000000000000"
+      },
+      "certificate": {},
+      "dns_security": {},
+      "posture_score": 55.4,
+      "risk_label": "high",
+      "ml_score": 0.58,
+      "ml_anomaly": "True",
+      "findings": [
+        {
+          "id": "tls.10",
+          "title": "Obsolete TLS 1.0 negotiated",
+          "description": "TLS 1.0 is deprecated and vulnerable to BEAST and RC4-based attacks.",
+          "category": "tls.version",
+          "severity": "high",
+          "recommendation": "Disable TLS 1.0 on the server; require TLS 1.2+.",
+          "cwe": "CWE-326",
+          "cve": "CVE-2011-3389"
+        },
+        {
+          "id": "tls.cipher.cbc_sha1",
+          "title": "Non-AEAD CBC cipher negotiated",
+          "description": "TLS_RSA_WITH_AES_256_CBC_SHA uses CBC mode without authenticated encryption.",
+          "category": "tls.cipher",
+          "severity": "medium",
+          "recommendation": "Prefer AEAD suites such as AES-GCM or ChaCha20-Poly1305.",
+          "cwe": "CWE-327",
+          "cve": "CVE-2016-2183"
+        },
+        {
+          "id": "tls.keyex.no_fs",
+          "title": "No forward secrecy (static key exchange)",
+          "description": "The session used RSA (static) key exchange, which does not provide forward secrecy. A compromised server key could decrypt past traffic.",
+          "category": "tls.keyexchange",
+          "severity": "high",
+          "recommendation": "Enable ephemeral key exchange (ECDHE/DHE) with forward secrecy.",
+          "cwe": "CWE-327",
+          "cve": "CVE-2015-4000"
+        }
+      ],
+      "severity_summary": {
+        "critical": 0,
+        "high": 2,
+        "medium": 1,
+        "low": 0,
+        "info": 0
+      }
+    },
+    {
+      "session_id": "185c3888382b",
+      "protocol": "pop3",
+      "server_ip": "10.0.0.1",
+      "server_port": 110,
+      "client_ip": "10.0.0.4",
+      "client_port": 49300,
+      "start_ts": 1700000001.229999,
+      "end_ts": 1700000001.249999,
+      "bytes_c2s": 105,
+      "bytes_s2c": 78,
+      "packets": 3,
+      "encrypted": true,
+      "plaintext": false,
+      "starttls_requested": false,
+      "starttls_upgraded": false,
+      "starttls_stripped": false,
+      "credentials_plaintext": false,
+      "auth_command": null,
+      "tls": {
+        "version": "TLSv1.3",
+        "cipher_suite": "TLS_AES_128_GCM_SHA256",
+        "cipher_hex": "0x1301",
+        "key_exchange": "ECDHE",
+        "key_exchange_group": "x25519",
+        "signature_algorithm": null,
+        "server_name": null,
+        "offered_ciphers": [
+          "TLS_AES_128_GCM_SHA256",
+          "TLS_AES_256_GCM_SHA384"
+        ],
+        "extensions": [
+          "supported_versions",
+          "supported_versions",
+          "key_share"
+        ],
+        "ja3": "c0fa996cd90cf490c422cc5e3291cddc",
+        "ja4": "t13i020200_62ed6f6ca7ad_efa03c98e060",
+        "ja4s": "t130100_1301_d5d54e22bb3e"
+      },
+      "certificate": {},
+      "dns_security": {},
+      "posture_score": 88.8,
+      "risk_label": "medium",
+      "ml_score": 0.35,
+      "ml_anomaly": "False",
+      "findings": [],
+      "severity_summary": {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "info": 0
+      }
+    },
+    {
+      "session_id": "0d90696c884a",
+      "protocol": "smtp",
+      "server_ip": "10.0.0.1",
+      "server_port": 25,
+      "client_ip": "10.0.0.5",
+      "client_port": 49400,
+      "start_ts": 1700000001.799999,
+      "end_ts": 1700000001.819999,
+      "bytes_c2s": 31,
+      "bytes_s2c": 28,
+      "packets": 3,
+      "encrypted": false,
+      "plaintext": true,
+      "starttls_requested": false,
+      "starttls_upgraded": false,
+      "starttls_stripped": false,
+      "credentials_plaintext": true,
+      "auth_command": "AUTH LOGIN",
+      "tls": {},
+      "certificate": {},
+      "dns_security": {},
+      "posture_score": 45.8,
+      "risk_label": "critical",
+      "ml_score": 0.88,
+      "ml_anomaly": "True",
+      "findings": [
+        {
+          "id": "starttls.missing",
+          "title": "No encryption (STARTTLS not used)",
+          "description": "The email session exchanged data in plaintext without STARTTLS.",
+          "category": "starttls",
+          "severity": "high",
+          "recommendation": "Require STARTTLS and reject plaintext sessions.",
+          "cwe": "CWE-319",
+          "cve": null
+        },
+        {
+          "id": "starttls.plaintext_creds",
+          "title": "Credentials sent in plaintext",
+          "description": "Authentication credentials (AUTH LOGIN) were observed before the TLS upgrade.",
+          "category": "starttls",
+          "severity": "critical",
+          "recommendation": "Never send credentials before the TLS handshake; enforce STARTTLS-before-AUTH.",
+          "cwe": "CWE-319",
+          "cve": null
+        }
+      ],
+      "severity_summary": {
+        "critical": 1,
+        "high": 1,
+        "medium": 0,
+        "low": 0,
+        "info": 0
+      }
+    }
+  ],
+  "compliance": {
+    "frameworks": [
+      {
+        "framework": "PCI-DSS 4.0",
+        "total_controls": 44,
+        "passed": 15,
+        "failed": 9,
+        "na": 20,
+        "verdict": "NON-COMPLIANT"
+      },
+      {
+        "framework": "NIST 800-52r2",
+        "total_controls": 44,
+        "passed": 15,
+        "failed": 9,
+        "na": 20,
+        "verdict": "NON-COMPLIANT"
+      },
+      {
+        "framework": "HIPAA",
+        "total_controls": 44,
+        "passed": 15,
+        "failed": 9,
+        "na": 20,
+        "verdict": "NON-COMPLIANT"
+      }
+    ],
+    "controls_summary": [
+      {
+        "control_id": "C01",
+        "control_name": "TLS version >= 1.2",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "FAIL",
+            "citation": "Req 2.2.7, 4.2.1"
+          },
+          "NIST 800-52r2": {
+            "status": "FAIL",
+            "citation": "\u00a73.1"
+          },
+          "HIPAA": {
+            "status": "FAIL",
+            "citation": "\u00a7164.312(e)(1)"
+          }
+        }
+      },
+      {
+        "control_id": "C02",
+        "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "FAIL",
+            "citation": "Req 2.2.7, 4.2.1"
+          },
+          "NIST 800-52r2": {
+            "status": "FAIL",
+            "citation": "\u00a73.3.1"
+          },
+          "HIPAA": {
+            "status": "FAIL",
+            "citation": "\u00a7164.312(e)(2)(ii)"
+          }
+        }
+      },
+      {
+        "control_id": "C03",
+        "control_name": "Forward secrecy (ECDHE/DHE)",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "FAIL",
+            "citation": "Req 4.2.1"
+          },
+          "NIST 800-52r2": {
+            "status": "FAIL",
+            "citation": "\u00a73.3.1"
+          },
+          "HIPAA": {
+            "status": "FAIL",
+            "citation": "\u00a7164.312(e)(2)(ii)"
+          }
+        }
+      },
+      {
+        "control_id": "C04",
+        "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "FAIL",
+            "citation": "Req 4.2.1"
+          },
+          "NIST 800-52r2": {
+            "status": "FAIL",
+            "citation": "\u00a73.3.1"
+          },
+          "HIPAA": {
+            "status": "FAIL",
+            "citation": "\u00a7164.312(e)(2)(ii)"
+          }
+        }
+      },
+      {
+        "control_id": "C05",
+        "control_name": "Valid, trusted certificate",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "N/A",
+            "citation": "Req 4.2.1"
+          },
+          "NIST 800-52r2": {
+            "status": "N/A",
+            "citation": "\u00a73.4"
+          },
+          "HIPAA": {
+            "status": "N/A",
+            "citation": "\u00a7164.312(e)(1)"
+          }
+        }
+      },
+      {
+        "control_id": "C06",
+        "control_name": "Certificate not expired",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "N/A",
+            "citation": "Req 4.2.1"
+          },
+          "NIST 800-52r2": {
+            "status": "N/A",
+            "citation": "\u00a73.4"
+          },
+          "HIPAA": {
+            "status": "N/A",
+            "citation": "\u00a7164.312(e)(1)"
+          }
+        }
+      },
+      {
+        "control_id": "C07",
+        "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "N/A",
+            "citation": "Req 2.2.7"
+          },
+          "NIST 800-52r2": {
+            "status": "N/A",
+            "citation": "\u00a73.2"
+          },
+          "HIPAA": {
+            "status": "N/A",
+            "citation": "\u00a7164.312(e)(2)(ii)"
+          }
+        }
+      },
+      {
+        "control_id": "C08",
+        "control_name": "No SHA-1 certificate signatures",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "N/A",
+            "citation": "Req 4.2.1"
+          },
+          "NIST 800-52r2": {
+            "status": "N/A",
+            "citation": "\u00a73.4.3"
+          },
+          "HIPAA": {
+            "status": "N/A",
+            "citation": "\u00a7164.312(e)(2)(ii)"
+          }
+        }
+      },
+      {
+        "control_id": "C09",
+        "control_name": "Encryption required (not plaintext)",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "FAIL",
+            "citation": "Req 4.2.1"
+          },
+          "NIST 800-52r2": {
+            "status": "FAIL",
+            "citation": "\u00a73.1"
+          },
+          "HIPAA": {
+            "status": "FAIL",
+            "citation": "\u00a7164.312(e)(1)"
+          }
+        }
+      },
+      {
+        "control_id": "C10",
+        "control_name": "No plaintext credentials",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "FAIL",
+            "citation": "Req 8.3.2"
+          },
+          "NIST 800-52r2": {
+            "status": "FAIL",
+            "citation": "\u00a73.5"
+          },
+          "HIPAA": {
+            "status": "FAIL",
+            "citation": "\u00a7164.312(d)"
+          }
+        }
+      },
+      {
+        "control_id": "C11",
+        "control_name": "No STARTTLS stripping",
+        "frameworks": {
+          "PCI-DSS 4.0": {
+            "status": "PASS",
+            "citation": "Req 4.2.1"
+          },
+          "NIST 800-52r2": {
+            "status": "PASS",
+            "citation": "\u00a73.1"
+          },
+          "HIPAA": {
+            "status": "PASS",
+            "citation": "\u00a7164.312(e)(1)"
+          }
+        }
+      }
+    ],
+    "per_session": {
+      "6e2b7b6ee35e": [
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7, 4.2.1",
+          "status": "PASS",
+          "detail": "Negotiated TLSv1.2"
+        },
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "PASS",
+          "detail": "Negotiated TLSv1.2"
+        },
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "PASS",
+          "detail": "Negotiated TLSv1.2"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7, 4.2.1",
+          "status": "FAIL",
+          "detail": "Weak cipher: TLS_RSA_WITH_RC4_128_SHA contains RC4"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "FAIL",
+          "detail": "Weak cipher: TLS_RSA_WITH_RC4_128_SHA contains RC4"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "FAIL",
+          "detail": "Weak cipher: TLS_RSA_WITH_RC4_128_SHA contains RC4"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "FAIL",
+          "detail": "Static key exchange: RSA (static) (no forward secrecy)"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "FAIL",
+          "detail": "Static key exchange: RSA (static) (no forward secrecy)"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "FAIL",
+          "detail": "Static key exchange: RSA (static) (no forward secrecy)"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "FAIL",
+          "detail": "Non-AEAD cipher: TLS_RSA_WITH_RC4_128_SHA"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "FAIL",
+          "detail": "Non-AEAD cipher: TLS_RSA_WITH_RC4_128_SHA"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "FAIL",
+          "detail": "Non-AEAD cipher: TLS_RSA_WITH_RC4_128_SHA"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.2",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4.3",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "PASS",
+          "detail": "Session is encrypted"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "PASS",
+          "detail": "Session is encrypted"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "PASS",
+          "detail": "Session is encrypted"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 8.3.2",
+          "status": "PASS",
+          "detail": "No plaintext credentials observed"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.5",
+          "status": "PASS",
+          "detail": "No plaintext credentials observed"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(d)",
+          "status": "PASS",
+          "detail": "No plaintext credentials observed"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "PASS",
+          "detail": "STARTTLS successfully upgraded"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "PASS",
+          "detail": "STARTTLS successfully upgraded"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "PASS",
+          "detail": "STARTTLS successfully upgraded"
+        }
+      ],
+      "61e544c81dac": [
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7, 4.2.1",
+          "status": "FAIL",
+          "detail": "Negotiated TLSv1.0 (requires >= TLS 1.2)"
+        },
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "FAIL",
+          "detail": "Negotiated TLSv1.0 (requires >= TLS 1.2)"
+        },
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "FAIL",
+          "detail": "Negotiated TLSv1.0 (requires >= TLS 1.2)"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7, 4.2.1",
+          "status": "PASS",
+          "detail": "Cipher: TLS_RSA_WITH_AES_256_CBC_SHA"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "PASS",
+          "detail": "Cipher: TLS_RSA_WITH_AES_256_CBC_SHA"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "PASS",
+          "detail": "Cipher: TLS_RSA_WITH_AES_256_CBC_SHA"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "FAIL",
+          "detail": "Static key exchange: RSA (static) (no forward secrecy)"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "FAIL",
+          "detail": "Static key exchange: RSA (static) (no forward secrecy)"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "FAIL",
+          "detail": "Static key exchange: RSA (static) (no forward secrecy)"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "FAIL",
+          "detail": "Non-AEAD cipher: TLS_RSA_WITH_AES_256_CBC_SHA"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "FAIL",
+          "detail": "Non-AEAD cipher: TLS_RSA_WITH_AES_256_CBC_SHA"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "FAIL",
+          "detail": "Non-AEAD cipher: TLS_RSA_WITH_AES_256_CBC_SHA"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.2",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4.3",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "PASS",
+          "detail": "Session is encrypted"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "PASS",
+          "detail": "Session is encrypted"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "PASS",
+          "detail": "Session is encrypted"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 8.3.2",
+          "status": "PASS",
+          "detail": "No plaintext credentials observed"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.5",
+          "status": "PASS",
+          "detail": "No plaintext credentials observed"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(d)",
+          "status": "PASS",
+          "detail": "No plaintext credentials observed"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "PASS",
+          "detail": "Implicit TLS (no STARTTLS needed)"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "PASS",
+          "detail": "Implicit TLS (no STARTTLS needed)"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "PASS",
+          "detail": "Implicit TLS (no STARTTLS needed)"
+        }
+      ],
+      "185c3888382b": [
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7, 4.2.1",
+          "status": "PASS",
+          "detail": "Negotiated TLSv1.3"
+        },
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "PASS",
+          "detail": "Negotiated TLSv1.3"
+        },
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "PASS",
+          "detail": "Negotiated TLSv1.3"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7, 4.2.1",
+          "status": "PASS",
+          "detail": "Cipher: TLS_AES_128_GCM_SHA256"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "PASS",
+          "detail": "Cipher: TLS_AES_128_GCM_SHA256"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "PASS",
+          "detail": "Cipher: TLS_AES_128_GCM_SHA256"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "PASS",
+          "detail": "Forward secrecy via ECDHE"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "PASS",
+          "detail": "Forward secrecy via ECDHE"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "PASS",
+          "detail": "Forward secrecy via ECDHE"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "PASS",
+          "detail": "AEAD cipher: TLS_AES_128_GCM_SHA256"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "PASS",
+          "detail": "AEAD cipher: TLS_AES_128_GCM_SHA256"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "PASS",
+          "detail": "AEAD cipher: TLS_AES_128_GCM_SHA256"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.2",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4.3",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "PASS",
+          "detail": "Session is encrypted"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "PASS",
+          "detail": "Session is encrypted"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "PASS",
+          "detail": "Session is encrypted"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 8.3.2",
+          "status": "PASS",
+          "detail": "No plaintext credentials observed"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.5",
+          "status": "PASS",
+          "detail": "No plaintext credentials observed"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(d)",
+          "status": "PASS",
+          "detail": "No plaintext credentials observed"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "PASS",
+          "detail": "Implicit TLS (no STARTTLS needed)"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "PASS",
+          "detail": "Implicit TLS (no STARTTLS needed)"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "PASS",
+          "detail": "Implicit TLS (no STARTTLS needed)"
+        }
+      ],
+      "0d90696c884a": [
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7, 4.2.1",
+          "status": "FAIL",
+          "detail": "Session is unencrypted (no TLS)"
+        },
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "FAIL",
+          "detail": "Session is unencrypted (no TLS)"
+        },
+        {
+          "control_id": "C01",
+          "control_name": "TLS version >= 1.2",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "FAIL",
+          "detail": "Session is unencrypted (no TLS)"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7, 4.2.1",
+          "status": "N/A",
+          "detail": "No cipher suite negotiated"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "N/A",
+          "detail": "No cipher suite negotiated"
+        },
+        {
+          "control_id": "C02",
+          "control_name": "No weak ciphers (RC4/DES/3DES/EXPORT/NULL)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No cipher suite negotiated"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No key exchange info"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "N/A",
+          "detail": "No key exchange info"
+        },
+        {
+          "control_id": "C03",
+          "control_name": "Forward secrecy (ECDHE/DHE)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No key exchange info"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No cipher suite negotiated"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.3.1",
+          "status": "N/A",
+          "detail": "No cipher suite negotiated"
+        },
+        {
+          "control_id": "C04",
+          "control_name": "AEAD cipher mode (GCM/ChaCha20)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No cipher suite negotiated"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C05",
+          "control_name": "Valid, trusted certificate",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C06",
+          "control_name": "Certificate not expired",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "N/A",
+          "detail": "No certificate presented"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 2.2.7",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.2",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C07",
+          "control_name": "Strong public key (RSA >= 2048 / EC >= 256)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No public key info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.4.3",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C08",
+          "control_name": "No SHA-1 certificate signatures",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(2)(ii)",
+          "status": "N/A",
+          "detail": "No certificate signature info"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "FAIL",
+          "detail": "Session transmitted data in plaintext"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "FAIL",
+          "detail": "Session transmitted data in plaintext"
+        },
+        {
+          "control_id": "C09",
+          "control_name": "Encryption required (not plaintext)",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "FAIL",
+          "detail": "Session transmitted data in plaintext"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 8.3.2",
+          "status": "FAIL",
+          "detail": "Credentials sent in plaintext (AUTH LOGIN)"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.5",
+          "status": "FAIL",
+          "detail": "Credentials sent in plaintext (AUTH LOGIN)"
+        },
+        {
+          "control_id": "C10",
+          "control_name": "No plaintext credentials",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(d)",
+          "status": "FAIL",
+          "detail": "Credentials sent in plaintext (AUTH LOGIN)"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "PCI-DSS 4.0",
+          "citation": "Req 4.2.1",
+          "status": "N/A",
+          "detail": "STARTTLS not attempted"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "NIST 800-52r2",
+          "citation": "\u00a73.1",
+          "status": "N/A",
+          "detail": "STARTTLS not attempted"
+        },
+        {
+          "control_id": "C11",
+          "control_name": "No STARTTLS stripping",
+          "framework": "HIPAA",
+          "citation": "\u00a7164.312(e)(1)",
+          "status": "N/A",
+          "detail": "STARTTLS not attempted"
+        }
+      ]
+    }
+  }
+}
