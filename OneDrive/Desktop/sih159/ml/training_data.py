@@ -122,6 +122,13 @@ def generate_classified(n_per_class: int = 500, seed: int = 7) -> Tuple[np.ndarr
     return X[order], y[order]
 
 
+def generate_class_samples(label: int, n: int = 200, seed: int = 42) -> np.ndarray:
+    """Generate n synthetic feature vectors for a specific risk class (0=low..3=critical)."""
+    rng = np.random.RandomState(seed)
+    profile = _PROFILES[label]
+    return np.array([_profile_sample(rng, profile) for _ in range(n)])
+
+
 def generate_baseline(n: int = 1500, seed: int = 11) -> np.ndarray:
     """Generate a 'normal traffic' baseline for the anomaly detector.
 

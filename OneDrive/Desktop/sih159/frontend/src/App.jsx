@@ -97,11 +97,13 @@ export default function App() {
   const terminalBodyRef = useRef(null)
 
   const [mlStatus, setMlStatus] = useState(null)
+  const [mlStatusError, setMlStatusError] = useState(null)
   const [mlEval, setMlEval] = useState(null)
   const [mlEvaluating, setMlEvaluating] = useState(false)
   const [mlTraining, setMlTraining] = useState(false)
 
   const [diagnostics, setDiagnostics] = useState(null)
+  const [diagnosticsError, setDiagnosticsError] = useState(null)
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false)
 
   // Hardening Modal State
@@ -395,11 +397,13 @@ export default function App() {
   }
 
   const loadMlStatus = async () => {
+    setMlStatusError(null)
     try {
       const resp = await axios.get('/api/tools/ml/status')
       setMlStatus(resp.data)
     } catch (e) {
       console.error('Failed to load ML status:', e)
+      setMlStatusError(e.response?.data?.detail || e.message || 'Failed to reach ML subsystem')
     }
   }
 
@@ -430,11 +434,13 @@ export default function App() {
 
   const loadDiagnostics = async () => {
     setDiagnosticsLoading(true)
+    setDiagnosticsError(null)
     try {
       const resp = await axios.get('/api/tools/system/diagnostics')
       setDiagnostics(resp.data)
     } catch (e) {
       console.error('Failed to load diagnostics:', e)
+      setDiagnosticsError(e.response?.data?.detail || e.message || 'Failed to reach diagnostics subsystem')
     } finally {
       setDiagnosticsLoading(false)
     }
@@ -475,7 +481,7 @@ export default function App() {
       if (!detailCache[s.session_id] && jobId) {
         axios.get(`/api/jobs/${jobId}/sessions/${s.session_id}`).then(resp => {
           setDetailCache(prev => ({ ...prev, [s.session_id]: resp.data }))
-        }).catch(() => {})
+        }).catch(() => { })
       }
     }
   }
@@ -606,8 +612,8 @@ export default function App() {
         <div className="brand-section">
           <div className="brand-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              <path d="m9 12 2 2 4-4"/>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <path d="m9 12 2 2 4-4" />
             </svg>
           </div>
           <div className="brand-title-group">
@@ -620,24 +626,24 @@ export default function App() {
         </div>
 
         <div className="header-status-group">
-          <button 
-            className="chip-btn" 
+          <button
+            className="chip-btn"
             style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', padding: '6px 12px' }}
             onClick={() => setWebhookModalOpen(true)}
             title="Configure SIEM, Slack, or Discord Webhook Alerts"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
             <span>Webhook Alerts</span>
           </button>
 
           {sessions.length > 0 && (
-            <button 
-              className="chip-btn" 
+            <button
+              className="chip-btn"
               style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', padding: '6px 12px' }}
               onClick={() => openHardeningModal(sessions[0].session_id)}
               title="1-Click Hardening Config Generator for MTAs"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
               <span>Hardening Guide</span>
             </button>
           )}
@@ -654,7 +660,7 @@ export default function App() {
       <nav className="nav-tabs">
         <button className={`nav-tab-btn ${activeTab === 'analysis' ? 'active' : ''}`} onClick={() => handleTabSwitch('analysis')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
           </svg>
           Analysis &amp; Forensics
           {sessions.length > 0 && <span className="tab-badge">{sessions.length}</span>}
@@ -662,29 +668,29 @@ export default function App() {
 
         <button className={`nav-tab-btn ${activeTab === 'compliance' ? 'active' : ''}`} onClick={() => handleTabSwitch('compliance')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />
           </svg>
           Compliance Matrix
         </button>
 
         <button className={`nav-tab-btn ${activeTab === 'live' ? 'active' : ''}`} onClick={() => handleTabSwitch('live')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>
+            <circle cx="12" cy="12" r="2" /><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14" />
           </svg>
           Live Sniffer
         </button>
 
         <button className={`nav-tab-btn ${activeTab === 'ml' ? 'active' : ''}`} onClick={() => handleTabSwitch('ml')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
           </svg>
           ML Studio
         </button>
 
         <button className={`nav-tab-btn ${activeTab === 'diagnostics' ? 'active' : ''}`} onClick={() => handleTabSwitch('diagnostics')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
           </svg>
           System Diagnostics
         </button>
@@ -692,25 +698,25 @@ export default function App() {
 
       {/* Interactive PCAP Upload & Demo Hero */}
       <div className={`upload-zone-wrapper ${isDragOver ? 'dragover' : ''}`}>
-        <div 
+        <div
           className="dropzone-inner"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            accept=".pcap,.pcapng" 
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".pcap,.pcapng"
             style={{ display: 'none' }}
-            onChange={(e) => setFile(e.target.files[0] || null)} 
+            onChange={(e) => setFile(e.target.files[0] || null)}
           />
           <div className="dropzone-icon">
             <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
           </div>
           <div className="dropzone-title">
@@ -738,12 +744,12 @@ export default function App() {
 
             <div className="input-number-group">
               <span>Max Sessions:</span>
-              <input 
-                type="number" 
-                min="0" 
-                value={maxSessions} 
-                onChange={(e) => setMaxSessions(Math.max(0, Number(e.target.value)))} 
-                title="0 = analyze all streams" 
+              <input
+                type="number"
+                min="0"
+                value={maxSessions}
+                onChange={(e) => setMaxSessions(Math.max(0, Number(e.target.value)))}
+                title="0 = analyze all streams"
               />
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(0 = all)</span>
             </div>
@@ -752,14 +758,14 @@ export default function App() {
           <div className="upload-btn-group">
             <button className="btn-secondary" onClick={doLoadDemo} disabled={loading}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
               Load Demo PCAP
             </button>
 
             <button className="btn-primary" onClick={doAnalyze} disabled={loading || !file}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               {loading ? 'Analyzing Streams…' : 'Run Posture Analysis'}
             </button>
@@ -769,7 +775,7 @@ export default function App() {
         {error && (
           <div className="alert-banner error">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <span>{error}</span>
           </div>
@@ -790,7 +796,7 @@ export default function App() {
         <>
           {/* Interactive KPI Cards */}
           <div className="stats-grid-interactive">
-            <div 
+            <div
               className={`stat-kpi-card kpi-card-sessions ${kpiFilter === 'ALL' ? 'selected-filter' : ''}`}
               onClick={() => setKpiFilter('ALL')}
               title="Click to reset filters and view all sessions"
@@ -798,8 +804,8 @@ export default function App() {
               <div className="kpi-header">
                 <span className="kpi-label">Total Sessions</span>
                 <svg className="kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                  <polyline points="22,6 12,13 2,6"/>
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
                 </svg>
               </div>
               <div className="kpi-value-row">
@@ -809,7 +815,7 @@ export default function App() {
               <div className="kpi-subtext">Click to view all sessions</div>
             </div>
 
-            <div 
+            <div
               className={`stat-kpi-card kpi-card-encrypted ${kpiFilter === 'ENCRYPTED' ? 'selected-filter' : ''}`}
               onClick={() => setKpiFilter(prev => prev === 'ENCRYPTED' ? 'ALL' : 'ENCRYPTED')}
               title="Click to filter encrypted sessions"
@@ -817,7 +823,7 @@ export default function App() {
               <div className="kpi-header">
                 <span className="kpi-label">Encrypted</span>
                 <svg className="kpi-icon" style={{ color: 'var(--sev-safe)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
               </div>
               <div className="kpi-value-row">
@@ -829,7 +835,7 @@ export default function App() {
               <div className="kpi-subtext">TLS / STARTTLS secured</div>
             </div>
 
-            <div 
+            <div
               className={`stat-kpi-card kpi-card-plaintext ${kpiFilter === 'PLAINTEXT' ? 'selected-filter' : ''}`}
               onClick={() => setKpiFilter(prev => prev === 'PLAINTEXT' ? 'ALL' : 'PLAINTEXT')}
               title="Click to filter plaintext sessions"
@@ -837,7 +843,7 @@ export default function App() {
               <div className="kpi-header">
                 <span className="kpi-label">Plaintext Exposure</span>
                 <svg className="kpi-icon" style={{ color: 'var(--sev-critical)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" />
                 </svg>
               </div>
               <div className="kpi-value-row">
@@ -871,7 +877,7 @@ export default function App() {
               </div>
             </div>
 
-            <div 
+            <div
               className={`stat-kpi-card kpi-card-anomalies ${kpiFilter === 'ANOMALIES' ? 'selected-filter' : ''}`}
               onClick={() => setKpiFilter(prev => prev === 'ANOMALIES' ? 'ALL' : 'ANOMALIES')}
               title="Click to filter ML anomalies"
@@ -879,7 +885,7 @@ export default function App() {
               <div className="kpi-header">
                 <span className="kpi-label">ML Anomalies</span>
                 <svg className="kpi-icon" style={{ color: 'var(--sev-high)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
               </div>
               <div className="kpi-value-row">
@@ -901,7 +907,7 @@ export default function App() {
               <div className="chart-card-header">
                 <span className="chart-card-title">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10h-10z"/>
+                    <circle cx="12" cy="12" r="10" /><path d="M12 2a10 10 0 0 1 10 10h-10z" />
                   </svg>
                   Findings by Severity
                 </span>
@@ -909,14 +915,14 @@ export default function App() {
               </div>
               <ResponsiveContainer width="100%" height={210}>
                 <PieChart>
-                  <Pie 
-                    data={sevPieData} 
-                    dataKey="value" 
-                    nameKey="name" 
-                    cx="50%" 
-                    cy="50%" 
+                  <Pie
+                    data={sevPieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
                     innerRadius={48}
-                    outerRadius={74} 
+                    outerRadius={74}
                     paddingAngle={3}
                   >
                     {sevPieData.map((d) => (
@@ -952,7 +958,7 @@ export default function App() {
               <div className="chart-card-header">
                 <span className="chart-card-title">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                    <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
                   </svg>
                   Sessions by Protocol
                 </span>
@@ -997,7 +1003,7 @@ export default function App() {
               <div className="chart-card-header">
                 <span className="chart-card-title">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                   </svg>
                   Stream Posture Curve
                 </span>
@@ -1007,8 +1013,8 @@ export default function App() {
                 <AreaChart data={streamScoreData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="scoreAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#38a856" stopOpacity={0.6}/>
-                      <stop offset="95%" stopColor="#38a856" stopOpacity={0.05}/>
+                      <stop offset="5%" stopColor="#38a856" stopOpacity={0.6} />
+                      <stop offset="95%" stopColor="#38a856" stopOpacity={0.05} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
@@ -1043,7 +1049,7 @@ export default function App() {
               <div className="chart-card-header">
                 <span className="chart-card-title">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                   Encryption Breakdown
                 </span>
@@ -1051,14 +1057,14 @@ export default function App() {
               </div>
               <ResponsiveContainer width="100%" height={210}>
                 <PieChart>
-                  <Pie 
-                    data={encryptionBreakdownData} 
-                    dataKey="value" 
-                    nameKey="name" 
-                    cx="50%" 
-                    cy="50%" 
+                  <Pie
+                    data={encryptionBreakdownData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
                     innerRadius={48}
-                    outerRadius={74} 
+                    outerRadius={74}
                     paddingAngle={4}
                   >
                     {encryptionBreakdownData.map((d) => (
@@ -1094,11 +1100,11 @@ export default function App() {
           <div className="forensic-toolbar">
             <div className="search-input-wrapper">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
-              <input 
-                type="text" 
-                placeholder="Search IP, port, protocol, cipher, cert, finding..." 
+              <input
+                type="text"
+                placeholder="Search IP, port, protocol, cipher, cert, finding..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -1111,8 +1117,8 @@ export default function App() {
             <div className="filter-chips-group">
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '2px' }}>PROTO:</span>
               {['ALL', 'SMTP', 'IMAP', 'POP3'].map(p => (
-                <button 
-                  key={p} 
+                <button
+                  key={p}
                   className={`chip-btn ${protocolFilter === p ? 'active' : ''}`}
                   onClick={() => setProtocolFilter(p)}
                 >
@@ -1125,8 +1131,8 @@ export default function App() {
             <div className="filter-chips-group">
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '2px' }}>RISK:</span>
               {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map(r => (
-                <button 
-                  key={r} 
+                <button
+                  key={r}
                   className={`chip-btn ${riskFilter === r ? 'active' : ''}`}
                   onClick={() => setRiskFilter(r)}
                   style={riskFilter === r && r !== 'ALL' ? { color: SEV_COLORS[r.toLowerCase()], borderColor: SEV_COLORS[r.toLowerCase()] } : {}}
@@ -1138,9 +1144,9 @@ export default function App() {
 
             {/* Sort & Actions */}
             <div className="toolbar-controls-right">
-              <select 
-                className="sort-select" 
-                value={sortOption} 
+              <select
+                className="sort-select"
+                value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
               >
                 <option value="score_asc">Posture: Lowest First (Priority)</option>
@@ -1151,19 +1157,19 @@ export default function App() {
 
               <div className="export-actions-group">
                 <a className="export-btn" href={exportUrl('json')} download title="Export structured JSON report">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   JSON
                 </a>
                 <a className="export-btn" href={exportUrl('html')} download title="Export standalone interactive HTML report">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   HTML
                 </a>
                 <a className="export-btn" href={exportUrl('pdf')} download title="Export executive PDF report">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   PDF
                 </a>
                 <a className="export-btn" href={exportUrl('csv')} download title="Export CSV for spreadsheet analysis">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   CSV
                 </a>
               </div>
@@ -1199,15 +1205,15 @@ export default function App() {
                       <span className={`protocol-tag proto-${(s.protocol || 'unknown').toLowerCase()}`}>
                         {s.protocol || 'UNKNOWN'}
                       </span>
-                      
+
                       <div className="network-flow-text">
                         <span className="ip-chip client">{s.client_ip}:{s.client_port}</span>
                         <span className="flow-arrow">➔</span>
                         <span className="ip-chip server">{s.server_ip}:{s.server_port}</span>
                       </div>
 
-                      <button 
-                        className="copy-mini-btn" 
+                      <button
+                        className="copy-mini-btn"
                         title="Copy connection stream IPs"
                         onClick={(e) => {
                           e.stopPropagation()
@@ -1218,7 +1224,7 @@ export default function App() {
                           <span style={{ color: 'var(--sev-safe)' }}>✓ Copied</span>
                         ) : (
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                           </svg>
                         )}
                       </button>
@@ -1227,12 +1233,12 @@ export default function App() {
                     <div className="session-right-meta">
                       {s.encrypted ? (
                         <span className="status-badge-compact encrypted">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                           TLS
                         </span>
                       ) : (
                         <span className="status-badge-compact plaintext">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>
                           Plaintext
                         </span>
                       )}
@@ -1244,7 +1250,7 @@ export default function App() {
                       )}
 
                       {detail?.pqc && (
-                        <span 
+                        <span
                           className={`status-badge-compact ${detail.pqc.pqc_status === 'QUANTUM_RESISTANT' ? 'encrypted' : 'plaintext'}`}
                           title={`Quantum Status: ${detail.pqc.pqc_status} (Score: ${detail.pqc.quantum_vulnerability_score}/100)`}
                         >
@@ -1253,10 +1259,10 @@ export default function App() {
                       )}
 
                       {detail?.attribution && (
-                        <span 
-                          className="status-badge-compact" 
-                          style={{ 
-                            background: detail.attribution.is_threat ? 'var(--sev-critical-bg)' : 'rgba(56, 168, 86, 0.12)', 
+                        <span
+                          className="status-badge-compact"
+                          style={{
+                            background: detail.attribution.is_threat ? 'var(--sev-critical-bg)' : 'rgba(56, 168, 86, 0.12)',
                             color: detail.attribution.is_threat ? 'var(--sev-critical)' : 'var(--primary)',
                             border: `1px solid ${detail.attribution.is_threat ? 'var(--sev-critical-border)' : 'var(--border-color)'}`
                           }}
@@ -1266,10 +1272,10 @@ export default function App() {
                         </span>
                       )}
 
-                      <span 
-                        className="risk-level-badge" 
-                        style={{ 
-                          background: (SEV_COLORS[s.risk_label] || '#64748b') + '20', 
+                      <span
+                        className="risk-level-badge"
+                        style={{
+                          background: (SEV_COLORS[s.risk_label] || '#64748b') + '20',
                           color: SEV_COLORS[s.risk_label] || '#64748b',
                           border: `1px solid ${SEV_COLORS[s.risk_label] || '#64748b'}40`
                         }}
@@ -1287,7 +1293,7 @@ export default function App() {
                       </span>
 
                       <svg className={`expand-chevron ${isExpanded ? 'expanded' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6 9 12 15 18 9"/>
+                        <polyline points="6 9 12 15 18 9" />
                       </svg>
                     </div>
                   </div>
@@ -1308,7 +1314,7 @@ export default function App() {
                               <div className="forensic-box-title">
                                 <span>TLS Handshake Forensics</span>
                                 {detail.tls && (
-                                  <button 
+                                  <button
                                     className="copy-mini-btn"
                                     onClick={() => copyToClipboard(JSON.stringify(detail.tls, null, 2), `tls-${s.session_id}`)}
                                   >
@@ -1348,8 +1354,8 @@ export default function App() {
                                       <span className="prop-key">JA4 (Client)</span>
                                       <span className="prop-val" style={{ fontSize: '11px', fontFamily: 'monospace' }}>
                                         {detail.tls.ja4}
-                                        <button 
-                                          className="copy-mini-btn" 
+                                        <button
+                                          className="copy-mini-btn"
                                           onClick={() => copyToClipboard(detail.tls.ja4, `ja4-${s.session_id}`)}
                                         >
                                           {copiedKey === `ja4-${s.session_id}` ? '✓' : 'Copy'}
@@ -1362,8 +1368,8 @@ export default function App() {
                                       <span className="prop-key">JA4S (Server)</span>
                                       <span className="prop-val" style={{ fontSize: '11px', fontFamily: 'monospace' }}>
                                         {detail.tls.ja4s}
-                                        <button 
-                                          className="copy-mini-btn" 
+                                        <button
+                                          className="copy-mini-btn"
                                           onClick={() => copyToClipboard(detail.tls.ja4s, `ja4s-${s.session_id}`)}
                                         >
                                           {copiedKey === `ja4s-${s.session_id}` ? '✓' : 'Copy'}
@@ -1376,8 +1382,8 @@ export default function App() {
                                       <span className="prop-key">JA3 Fingerprint</span>
                                       <span className="prop-val" style={{ fontSize: '11px' }}>
                                         {detail.tls.ja3.substring(0, 16)}…
-                                        <button 
-                                          className="copy-mini-btn" 
+                                        <button
+                                          className="copy-mini-btn"
                                           onClick={() => copyToClipboard(detail.tls.ja3, `ja3-${s.session_id}`)}
                                         >
                                           {copiedKey === `ja3-${s.session_id}` ? '✓' : 'Copy'}
@@ -1425,8 +1431,8 @@ export default function App() {
                                       <span className="prop-key">JA4X (Cert FP)</span>
                                       <span className="prop-val" style={{ fontSize: '11px', fontFamily: 'monospace' }}>
                                         {detail.certificate.ja4x}
-                                        <button 
-                                          className="copy-mini-btn" 
+                                        <button
+                                          className="copy-mini-btn"
                                           onClick={() => copyToClipboard(detail.certificate.ja4x, `ja4x-${s.session_id}`)}
                                         >
                                           {copiedKey === `ja4x-${s.session_id}` ? '✓' : 'Copy'}
@@ -1437,10 +1443,10 @@ export default function App() {
                                   <div className="forensic-property-row">
                                     <span className="prop-key">Validity Status</span>
                                     <span className="prop-val" style={{ color: detail.certificate.expired ? 'var(--sev-critical)' : 'var(--sev-safe)' }}>
-                                      {detail.certificate.expired 
-                                        ? 'EXPIRED' 
-                                        : detail.certificate.days_to_expiry !== null 
-                                          ? `Expires in ${detail.certificate.days_to_expiry} days` 
+                                      {detail.certificate.expired
+                                        ? 'EXPIRED'
+                                        : detail.certificate.days_to_expiry !== null
+                                          ? `Expires in ${detail.certificate.days_to_expiry} days`
                                           : 'Valid'}
                                     </span>
                                   </div>
@@ -1483,22 +1489,22 @@ export default function App() {
                               <div className="forensic-box-title">
                                 <span>Downgrade Protection (RFC 8461/7672)</span>
                                 {detail.dns_security && (
-                                  <span style={{ 
-                                    fontSize: '11px', 
+                                  <span style={{
+                                    fontSize: '11px',
                                     fontWeight: 600,
                                     color: detail.dns_security.mta_sts_mode === 'enforce' || detail.dns_security.dane_valid
-                                      ? 'var(--sev-safe)' 
+                                      ? 'var(--sev-safe)'
                                       : detail.dns_security.mta_sts_mode === 'testing'
-                                      ? 'var(--sev-low)'
-                                      : 'var(--sev-medium)' 
+                                        ? 'var(--sev-low)'
+                                        : 'var(--sev-medium)'
                                   }}>
                                     {detail.dns_security.mta_sts_mode === 'enforce'
                                       ? '● MTA-STS ENFORCE'
                                       : detail.dns_security.dane_valid
-                                      ? '● DANE VALIDATED'
-                                      : detail.dns_security.mta_sts_mode === 'testing'
-                                      ? '● MTA-STS TESTING'
-                                      : '● NO ACTIVE POLICY'}
+                                        ? '● DANE VALIDATED'
+                                        : detail.dns_security.mta_sts_mode === 'testing'
+                                          ? '● MTA-STS TESTING'
+                                          : '● NO ACTIVE POLICY'}
                                   </span>
                                 )}
                               </div>
@@ -1517,14 +1523,14 @@ export default function App() {
                                       color: detail.dns_security.mta_sts_mode === 'enforce'
                                         ? 'var(--sev-safe)'
                                         : detail.dns_security.mta_sts_mode === 'testing'
-                                        ? 'var(--sev-low)'
-                                        : 'var(--text-muted)'
+                                          ? 'var(--sev-low)'
+                                          : 'var(--text-muted)'
                                     }}>
-                                      {detail.dns_security.mta_sts_mode 
+                                      {detail.dns_security.mta_sts_mode
                                         ? `Mode: ${detail.dns_security.mta_sts_mode.toUpperCase()}`
                                         : detail.dns_security.mta_sts_record
-                                        ? 'Configured'
-                                        : 'Not Published'}
+                                          ? 'Configured'
+                                          : 'Not Published'}
                                     </span>
                                   </div>
                                   <div className="forensic-property-row">
@@ -1533,16 +1539,16 @@ export default function App() {
                                       color: detail.dns_security.dane_match_status === 'MATCH'
                                         ? 'var(--sev-safe)'
                                         : detail.dns_security.dane_match_status === 'MISMATCH'
-                                        ? 'var(--sev-critical)'
-                                        : 'var(--text-muted)'
+                                          ? 'var(--sev-critical)'
+                                          : 'var(--text-muted)'
                                     }}>
                                       {detail.dns_security.dane_match_status === 'MATCH'
                                         ? '✓ Validated against Leaf Cert'
                                         : detail.dns_security.dane_match_status === 'MISMATCH'
-                                        ? '⚠️ TLSA Mismatch'
-                                        : detail.dns_security.dane_tlsa_records?.length > 0
-                                        ? `${detail.dns_security.dane_tlsa_records.length} Record(s)`
-                                        : 'Not Published'}
+                                          ? '⚠️ TLSA Mismatch'
+                                          : detail.dns_security.dane_tlsa_records?.length > 0
+                                            ? `${detail.dns_security.dane_tlsa_records.length} Record(s)`
+                                            : 'Not Published'}
                                     </span>
                                   </div>
                                   {(detail.dns_security.recommended_mta_sts_dns || detail.dns_security.recommended_mta_sts_policy) && (
@@ -1578,10 +1584,10 @@ export default function App() {
                               <div className="forensic-box-title">
                                 <span>⚛️ Post-Quantum Readiness (FIPS 203)</span>
                                 {detail.pqc && (
-                                  <span style={{ 
-                                    fontSize: '11px', 
+                                  <span style={{
+                                    fontSize: '11px',
                                     fontWeight: 600,
-                                    color: detail.pqc.pqc_status === 'QUANTUM_RESISTANT' ? 'var(--sev-safe)' : detail.pqc.pqc_status === 'TRANSITIONAL' ? 'var(--sev-low)' : 'var(--sev-critical)' 
+                                    color: detail.pqc.pqc_status === 'QUANTUM_RESISTANT' ? 'var(--sev-safe)' : detail.pqc.pqc_status === 'TRANSITIONAL' ? 'var(--sev-low)' : 'var(--sev-critical)'
                                   }}>
                                     ● {detail.pqc.pqc_status.replace(/_/g, ' ')}
                                   </span>
@@ -1629,10 +1635,10 @@ export default function App() {
                               <div className="forensic-box-title">
                                 <span>🎯 JA4 Client &amp; Threat Attribution</span>
                                 {detail.attribution && (
-                                  <span style={{ 
-                                    fontSize: '11px', 
+                                  <span style={{
+                                    fontSize: '11px',
                                     fontWeight: 600,
-                                    color: detail.attribution.is_threat ? 'var(--sev-critical)' : 'var(--sev-safe)' 
+                                    color: detail.attribution.is_threat ? 'var(--sev-critical)' : 'var(--sev-safe)'
                                   }}>
                                     ● {detail.attribution.confidence.toUpperCase()} CONFIDENCE
                                   </span>
@@ -1675,13 +1681,13 @@ export default function App() {
 
                           {/* 1-Click Hardening Config Generator Trigger */}
                           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', gap: '8px' }}>
-                            <button 
-                              className="chip-btn" 
+                            <button
+                              className="chip-btn"
                               style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '7px 14px', fontWeight: 600 }}
                               onClick={() => openHardeningModal(s.session_id)}
                               title="Generate copy-pasteable configurations for Postfix, Dovecot, and Exim"
                             >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                               1-Click Server Hardening (Postfix / Dovecot / Exim)
                             </button>
                           </div>
@@ -1691,21 +1697,21 @@ export default function App() {
                             <div className="findings-header">
 
                               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                               </svg>
                               <span>Cryptographic Vulnerability Findings ({detail.findings.length})</span>
                             </div>
 
                             {detail.findings.length === 0 ? (
                               <div className="no-findings-msg">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                                 <span>No security weaknesses detected — stream meets modern cryptographic standards.</span>
                               </div>
                             ) : (
                               detail.findings.map((f, idx) => (
                                 <div key={f.id + idx} className="finding-item-card">
                                   <div className="finding-title-row">
-                                    <span 
+                                    <span
                                       className="finding-sev-pill"
                                       style={{
                                         background: (SEV_COLORS[f.severity] || '#64748b') + '22',
@@ -1767,7 +1773,7 @@ export default function App() {
           {!compliance && !complianceLoading && !jobId && (
             <div className="panel-card" style={{ textAlign: 'center', padding: '40px' }}>
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }}>
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
               </svg>
               <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '6px' }}>No Capture Data Available</div>
               <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>Please analyze a PCAP file or load the demo sample first to generate the regulatory compliance audit matrix.</div>
@@ -1792,21 +1798,21 @@ export default function App() {
                           {fw.verdict}
                         </div>
                       </div>
-                      
+
                       <div className="fw-meter-wrapper">
                         <div className="fw-meter-label">
                           <span>Readiness Ratio</span>
                           <span style={{ fontWeight: '700', color: fw.verdict === 'PASS' ? '#10b981' : fw.verdict === 'CONDITIONAL' ? '#f59e0b' : '#ef4444' }}>{passPct}%</span>
                         </div>
                         <div className="fw-meter-track">
-                          <div 
-                            className="fw-meter-fill" 
-                            style={{ 
+                          <div
+                            className="fw-meter-fill"
+                            style={{
                               width: `${passPct}%`,
-                              background: fw.verdict === 'PASS' 
-                                ? '#38a856' 
-                                : fw.verdict === 'CONDITIONAL' 
-                                  ? '#ffca3a' 
+                              background: fw.verdict === 'PASS'
+                                ? '#38a856'
+                                : fw.verdict === 'CONDITIONAL'
+                                  ? '#ffca3a'
                                   : '#ff595e'
                             }}
                           />
@@ -1827,10 +1833,10 @@ export default function App() {
               <div className="compliance-table-card">
                 <div className="table-toolbar">
                   <div className="search-input-wrapper" style={{ maxWidth: '320px' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input 
-                      type="text" 
-                      placeholder="Filter control ID or name..." 
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                    <input
+                      type="text"
+                      placeholder="Filter control ID or name..."
                       value={complianceSearch}
                       onChange={(e) => setComplianceSearch(e.target.value)}
                     />
@@ -1839,7 +1845,7 @@ export default function App() {
                   <div className="filter-chips-group">
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>STATUS:</span>
                     {['ALL', 'PASS', 'FAIL', 'N/A'].map(st => (
-                      <button 
+                      <button
                         key={st}
                         className={`chip-btn ${complianceStatusFilter === st ? 'active' : ''}`}
                         onClick={() => setComplianceStatusFilter(st)}
@@ -1874,7 +1880,7 @@ export default function App() {
                             const icon = st === 'PASS' ? '✓' : st === 'FAIL' ? '✗' : '—'
                             return (
                               <td key={fw} style={{ textAlign: 'center' }}>
-                                <span 
+                                <span
                                   className="status-chip-table"
                                   style={{
                                     background: (STATUS_COLORS[st] || '#64748b') + '15',
@@ -1912,13 +1918,13 @@ export default function App() {
             <div className="panel-card-title">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>
+                  <circle cx="12" cy="12" r="2" /><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14" />
                 </svg>
                 <span>Real-Time Network Interface Sniffer &amp; WebSocket Stream</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ 
-                  fontSize: '11px', 
+                <span style={{
+                  fontSize: '11px',
                   fontWeight: 600,
                   padding: '3px 9px',
                   borderRadius: '12px',
@@ -1929,8 +1935,8 @@ export default function App() {
                   {wsConnected ? '● WS STREAM CONNECTED' : '○ WS CONNECTING…'}
                 </span>
                 {liveCapturing && (
-                  <span style={{ 
-                    fontSize: '11px', 
+                  <span style={{
+                    fontSize: '11px',
                     fontWeight: 700,
                     padding: '3px 9px',
                     borderRadius: '12px',
@@ -1958,14 +1964,14 @@ export default function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Capture Source:</label>
                 <div className="mode-toggle-group">
-                  <button 
+                  <button
                     className={`mode-toggle-btn ${!simulationMode ? 'active' : ''}`}
                     onClick={() => setSimulationMode(false)}
                     disabled={liveCapturing}
                   >
                     Hardware Interface (Live)
                   </button>
-                  <button 
+                  <button
                     className={`mode-toggle-btn ${simulationMode ? 'active' : ''}`}
                     onClick={() => setSimulationMode(true)}
                     disabled={liveCapturing}
@@ -1979,10 +1985,10 @@ export default function App() {
               {!simulationMode ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '240px' }}>
                   <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Network Adapter:</label>
-                  <select 
+                  <select
                     id="network-adapter-select"
                     className="custom-select"
-                    value={selectedInterface} 
+                    value={selectedInterface}
                     onChange={(e) => setSelectedInterface(e.target.value)}
                     disabled={liveCapturing}
                     style={{ padding: '6px 12px', fontSize: '12.5px', minWidth: '280px' }}
@@ -2008,12 +2014,12 @@ export default function App() {
                 <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
                   Duration: <b>{liveDuration}s</b>
                 </label>
-                <input 
-                  type="range" 
-                  min="5" 
-                  max="60" 
-                  value={liveDuration} 
-                  onChange={(e) => setLiveDuration(Number(e.target.value))} 
+                <input
+                  type="range"
+                  min="5"
+                  max="60"
+                  value={liveDuration}
+                  onChange={(e) => setLiveDuration(Number(e.target.value))}
                   className="range-slider"
                   disabled={liveCapturing}
                 />
@@ -2022,8 +2028,8 @@ export default function App() {
               {/* Start / Stop Button */}
               <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                 {liveCapturing ? (
-                  <button 
-                    className="btn-danger" 
+                  <button
+                    className="btn-danger"
                     onClick={stopLiveSniffing}
                     style={{ background: 'var(--sev-critical)', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '6px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
                   >
@@ -2031,13 +2037,13 @@ export default function App() {
                     Stop Sniffing ({captureRemaining}s)
                   </button>
                 ) : (
-                  <button 
-                    className="btn-primary" 
-                    onClick={startLiveSniffing} 
+                  <button
+                    className="btn-primary"
+                    onClick={startLiveSniffing}
                     disabled={!wsConnected || (!simulationMode && !selectedInterface)}
                     style={{ padding: '9px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3" /></svg>
                     Start Real-Time Sniffing
                   </button>
                 )}
@@ -2075,15 +2081,15 @@ export default function App() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '11px', color: '#9ca3af' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={autoScroll} 
-                        onChange={(e) => setAutoScroll(e.target.checked)} 
+                      <input
+                        type="checkbox"
+                        checked={autoScroll}
+                        onChange={(e) => setAutoScroll(e.target.checked)}
                       />
                       Auto-scroll
                     </label>
-                    <button 
-                      className="copy-mini-btn" 
+                    <button
+                      className="copy-mini-btn"
                       onClick={() => setLivePackets([])}
                       style={{ background: '#1f2937', color: '#9ca3af', border: '1px solid #374151' }}
                     >
@@ -2095,8 +2101,8 @@ export default function App() {
                 <div className="live-terminal-body" ref={terminalBodyRef}>
                   {livePackets.length === 0 ? (
                     <div style={{ padding: '30px', textAlign: 'center', color: '#6b7280' }}>
-                      {liveCapturing 
-                        ? 'Sniffing wire... Waiting for incoming email traffic packets on interface.' 
+                      {liveCapturing
+                        ? 'Sniffing wire... Waiting for incoming email traffic packets on interface.'
                         : 'Capture is idle. Click "Start Real-Time Sniffing" to stream live packet forensics.'}
                     </div>
                   ) : (
@@ -2146,7 +2152,7 @@ export default function App() {
                             <span className="proto-badge" style={{ fontSize: '10px', padding: '2px 6px' }}>{s.protocol?.toUpperCase()}</span>
                             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700 }}>{s.session_id.substring(0, 8)}</span>
                           </div>
-                          <span 
+                          <span
                             className="risk-level-badge"
                             style={{
                               background: (SEV_COLORS[s.risk_label] || '#64748b') + '20',
@@ -2197,13 +2203,13 @@ export default function App() {
                   </div>
                 </div>
 
-                <button 
-                  className="btn-primary" 
+                <button
+                  className="btn-primary"
                   onClick={openLiveAnalysis}
                   style={{ padding: '10px 20px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
                   <span>Open Full SOC Forensic Analysis &amp; Reports</span>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
                 </button>
               </div>
             )}
@@ -2218,7 +2224,7 @@ export default function App() {
         <div className="panel-card">
           <div className="panel-card-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
             </svg>
             <span>Machine Learning Model Studio &amp; Telemetry</span>
           </div>
@@ -2249,11 +2255,31 @@ export default function App() {
                 <div className="forensic-box">
                   <div className="forensic-box-title">Scoring Fusion Balance</div>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                    Rule-Engine Weight: <b style={{ color: 'var(--accent-blue)' }}>{mlStatus.config?.posture?.rule_weight ?? 0.6}</b> <br/>
+                    Rule-Engine Weight: <b style={{ color: 'var(--accent-blue)' }}>{mlStatus.config?.posture?.rule_weight ?? 0.6}</b> <br />
                     ML Inference Weight: <b style={{ color: 'var(--accent-blue)' }}>{mlStatus.config?.posture?.ml_weight ?? 0.4}</b>
                   </div>
+                  {mlStatus.metadata && (
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                      Last trained: {new Date(mlStatus.metadata.trained_at).toLocaleString()} · {mlStatus.metadata.classifier_sample_count} samples · source: {mlStatus.metadata.source}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {mlStatus.feature_names && mlStatus.feature_names.length > 0 && (
+                <div className="forensic-box" style={{ marginBottom: '20px' }}>
+                  <div className="forensic-box-title" style={{ marginBottom: '8px' }}>
+                    Model Input Features ({mlStatus.feature_names.length} dimensions)
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {mlStatus.feature_names.map(f => (
+                      <span key={f} className="chip-btn" style={{ fontSize: '11px', cursor: 'default' }}>
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
                 <button className="btn-primary" onClick={evaluateMl} disabled={mlEvaluating}>
@@ -2299,11 +2325,29 @@ export default function App() {
                   </div>
 
                   <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>Detailed Classification Metrics:</div>
-                  <pre style={{ background: 'var(--bg-app)', padding: '14px', borderRadius: '8px', fontSize: '12px', fontFamily: 'var(--font-mono)', color: '#bae6fd', overflowX: 'auto' }}>
+                  <pre style={{ background: 'var(--bg-app)', padding: '14px', borderRadius: '8px', fontSize: '12px', fontFamily: 'var(--font-mono)', color: '#000000', overflowX: 'auto' }}>
                     {JSON.stringify(mlEval.classification_report, null, 2)}
                   </pre>
+
+                  {typeof mlEval.anomaly_baseline_flag_rate === 'number' && (
+                    <div className="forensic-box" style={{ marginTop: '16px' }}>
+                      <div className="forensic-box-title">Anomaly Detector Evaluation</div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '8px 0' }}>
+                        Flag rate on clean baseline traffic: <b style={{ color: 'var(--accent-blue)' }}>{((mlEval.anomaly_baseline_flag_rate || 0) * 100).toFixed(1)}%</b> (lower is better)
+                      </div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        Flag rate on critical/broken-crypto traffic: <b style={{ color: 'var(--accent-blue)' }}>{((mlEval.anomaly_critical_flag_rate || 0) * 100).toFixed(1)}%</b> (higher is better — shows real detection power)
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+            </div>
+          ) : mlStatusError ? (
+            <div className="forensic-box" style={{ borderColor: 'var(--sev-critical)' }}>
+              <div className="forensic-box-title" style={{ color: 'var(--sev-critical)' }}>Failed to load ML subsystem</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '8px 0 12px' }}>{mlStatusError}</div>
+              <button className="btn-secondary" onClick={loadMlStatus}>Retry</button>
             </div>
           ) : (
             <div className="loading-card" style={{ padding: '20px' }}>
@@ -2322,12 +2366,12 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
             <div className="panel-card-title" style={{ margin: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
               </svg>
               <span>Subsystem Health &amp; Dependencies</span>
             </div>
             <button className="btn-secondary" onClick={loadDiagnostics} disabled={diagnosticsLoading}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
               Refresh
             </button>
           </div>
@@ -2357,9 +2401,14 @@ export default function App() {
                 </div>
               ))}
             </div>
+          ) : diagnosticsError ? (
+            <div className="forensic-box" style={{ borderColor: 'var(--sev-critical)' }}>
+              <div className="forensic-box-title" style={{ color: 'var(--sev-critical)' }}>Failed to load diagnostics subsystem</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '8px 0 12px' }}>{diagnosticsError}</div>
+              <button className="btn-secondary" onClick={loadDiagnostics}>Retry</button>
+            </div>
           ) : (
             <div className="loading-card">
-
               <div className="spinner"></div>
               <span>Querying system diagnostics…</span>
             </div>
@@ -2373,7 +2422,7 @@ export default function App() {
           <div className="modal-card" style={{ maxWidth: '820px', width: '90%' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                 <h2 style={{ fontSize: '18px', margin: 0 }}>1-Click Server Hardening Generator</h2>
               </div>
               <button className="copy-mini-btn" style={{ fontSize: '16px', padding: '4px 8px' }} onClick={() => setHardeningModalOpen(false)}>✕</button>
@@ -2497,7 +2546,7 @@ export default function App() {
           <div className="modal-card" style={{ maxWidth: '680px', width: '90%' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
                 <h2 style={{ fontSize: '18px', margin: 0 }}>SIEM, Slack &amp; Discord Webhook Alerts</h2>
               </div>
               <button className="copy-mini-btn" style={{ fontSize: '16px', padding: '4px 8px' }} onClick={() => setWebhookModalOpen(false)}>✕</button>

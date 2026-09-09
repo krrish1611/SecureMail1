@@ -78,7 +78,8 @@ def train_models(n_per_class: int = 500, baseline_n: int = 1500,
             # No labels provided: train a generic classifier from realistic data
             # so that predict/predict_proba still work.
             Xb, yb = generate_classified(n_per_class=n_per_class, seed=seed)
-            y = np.concatenate([y, yb])
+            # Use synthetic labels directly since unlabelled CSV has no ground-truth labels
+            y = yb
             X = np.vstack([X, Xb])
     else:
         X, y = generate_classified(n_per_class=n_per_class, seed=seed)
@@ -92,6 +93,19 @@ def train_models(n_per_class: int = 500, baseline_n: int = 1500,
     det = AnomalyDetector()
     det.train(baseline)
     det.save()
+
+    import datetime
+    import json
+    metadata = {
+        "trained_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "source": "csv" if csv_path else "synthetic",
+        "n_per_class": n_per_class,
+        "baseline_n": baseline_n,
+        "classifier_sample_count": len(X),
+        "baseline_sample_count": len(baseline),
+    }
+    with open(os.path.join(MODEL_DIR, "metadata.json"), "w") as f:
+        json.dump(metadata, f, indent=2)
 
     return {
         "classifier": len(X),
@@ -128,7 +142,12 @@ class RiskClassifier:
         self.model = RandomForestClassifier(
             n_estimators=CONFIG["models"]["n_estimators"], random_state=42,
             class_weight="balanced")
-        self.model.fit(Xs, y)
+        if len(y) != len(Xs):
+            # If unlabeled samples were prepended to X (e.g. from unlabeled CSV),
+            # fit the classifier on the labeled rows while keeping the full-dataset scaler.
+            self.model.fit(Xs[-len(y):], y)
+        else:
+            self.model.fit(Xs, y)
 
     def predict(self, features: Dict[str, float]) -> Tuple[int, float]:
         """Return (label 0..3, confidence)."""

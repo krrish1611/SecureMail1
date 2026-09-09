@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, WebSocket, WebSo
 from core.capture import reassemble
 from core.analyzer import analyze_all
 from core.live import LiveMonitor
-from core.models import Severity, SEVERITY_NAMES
+from core.models import Session, Finding, Severity, SEVERITY_NAMES
 from core.compliance import evaluate_compliance_all, compliance_report_to_dict
 from ml.models import MLPostureScorer, rule_based_posture_score
 from reports.exporters import generate_json, generate_html, generate_pdf, generate_csv
@@ -61,7 +61,7 @@ def _overall_stats(sessions) -> OverallStats:
     )
 
 
-def _session_summary(s: "Session") -> SessionSummary:
+def _session_summary(s: Session) -> SessionSummary:
     return SessionSummary(
         session_id=s.id,
         protocol=s.protocol,
@@ -80,7 +80,7 @@ def _session_summary(s: "Session") -> SessionSummary:
     )
 
 
-def _session_detail(s: "Session") -> SessionDetail:
+def _session_detail(s: Session) -> SessionDetail:
     tls = None
     if s.tls:
         tls = TLSDetails(
@@ -540,44 +540,83 @@ async def live_websocket_endpoint(websocket: WebSocket):
 @router.get("/tools/ml/status")
 async def get_ml_status():
     from ml.models import CONFIG, MODEL_DIR, FEATURE_NAMES
-    import os
     risk_clf_exists = os.path.exists(os.path.join(MODEL_DIR, "risk_clf.joblib"))
     anomaly_if_exists = os.path.exists(os.path.join(MODEL_DIR, "anomaly_if.joblib"))
+    metadata_path = os.path.join(MODEL_DIR, "metadata.json")
+    metadata = None
+    if os.path.exists(metadata_path):
+        import json
+        try:
+            with open(metadata_path) as f:
+                metadata = json.load(f)
+        except Exception:
+            metadata = None
     return {
         "risk_model_ready": risk_clf_exists,
         "anomaly_model_ready": anomaly_if_exists,
         "config": CONFIG,
         "feature_names": FEATURE_NAMES,
+        "metadata": metadata,
     }
 
 @router.post("/tools/ml/evaluate")
 async def evaluate_ml():
-    from ml.models import RiskClassifier
-    from ml.training_data import generate_classified
-    from ml.features import FEATURE_NAMES
-    from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
     import numpy as np
-    
+    from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+    from sklearn.model_selection import train_test_split
+    from ml.features import FEATURE_NAMES
+    from ml.models import AnomalyDetector, RiskClassifier
+    from ml.training_data import generate_baseline, generate_class_samples, generate_classified
+
+    # 1. Train/test split evaluation for RiskClassifier
     X, y = generate_classified(n_per_class=200, seed=99)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.25, random_state=42, stratify=y
+    )
     clf = RiskClassifier()
-    clf.train(X, y)
-    
+    clf.train(X_train, y_train)
+
     preds = []
-    for row in X:
+    for row in X_test:
         f = {name: float(row[i]) for i, name in enumerate(FEATURE_NAMES)}
         label, _ = clf.predict(f)
         preds.append(label)
     preds = np.array(preds)
-    
-    acc = float(accuracy_score(y, preds))
-    cm = confusion_matrix(y, preds).tolist()
-    cr = classification_report(y, preds, target_names=["low", "medium", "high", "critical"], output_dict=True)
-    
+
+    acc = float(accuracy_score(y_test, preds))
+    cm = confusion_matrix(y_test, preds).tolist()
+    cr = classification_report(
+        y_test, preds, target_names=["low", "medium", "high", "critical"], output_dict=True
+    )
+
+    # 2. Real evaluation of AnomalyDetector
+    baseline = generate_baseline(n=300, seed=99)
+    det = AnomalyDetector()
+    det.train(baseline)
+
+    # Flag rate on clean baseline traffic
+    baseline_test = generate_baseline(n=200, seed=123)
+    base_flags = [
+        det.predict({name: float(row[i]) for i, name in enumerate(FEATURE_NAMES)})[0]
+        for row in baseline_test
+    ]
+    anomaly_baseline_flag_rate = float(np.mean(base_flags))
+
+    # Flag rate on critical/broken-crypto traffic
+    crit_test = generate_class_samples(label=3, n=200, seed=123)
+    crit_flags = [
+        det.predict({name: float(row[i]) for i, name in enumerate(FEATURE_NAMES)})[0]
+        for row in crit_test
+    ]
+    anomaly_critical_flag_rate = float(np.mean(crit_flags))
+
     return {
         "accuracy": acc,
         "confusion_matrix": cm,
         "classification_report": cr,
-        "baseline_anomaly_rate": 0.08
+        "anomaly_baseline_flag_rate": anomaly_baseline_flag_rate,
+        "anomaly_critical_flag_rate": anomaly_critical_flag_rate,
+        "baseline_anomaly_rate": anomaly_baseline_flag_rate,
     }
 
 @router.post("/tools/ml/train")
@@ -625,7 +664,6 @@ async def get_diagnostics():
         diagnostics["scapy_version"] = None
 
     from ml.models import MODEL_DIR
-    import os
     diagnostics["ml_models_active"] = (
         os.path.exists(os.path.join(MODEL_DIR, "risk_clf.joblib")) and
         os.path.exists(os.path.join(MODEL_DIR, "anomaly_if.joblib"))
