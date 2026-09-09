@@ -10,6 +10,9 @@ SMTP_PATTERNS = [rb"220 .*ESMTP", rb"220 .*SMTP", rb"^EHLO ", rb"^HELO ", rb"^MA
 IMAP_PATTERNS = [rb"^\* OK", rb"^CAPABILITY ", rb"^A[0-9]+ LOGIN ", rb"IMAP4rev1"]
 POP3_PATTERNS = [rb"^\+OK.*POP3", rb"^USER ", rb"^PASS ", rb"^STAT\r\n", rb"^RETR "]
 
+# Consolidated list for fast candidate screening in the capture layer.
+ALL_EMAIL_PATTERNS = SMTP_PATTERNS + IMAP_PATTERNS + POP3_PATTERNS
+
 
 class ProtocolDetector:
     """Detects email protocols from reassembled stream bytes and STARTTLS state."""
