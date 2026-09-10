@@ -3085,6 +3085,8 @@ export default function App() {
           {diagnostics ? (
             <div className="diagnostics-grid">
               {[
+                { label: 'Process Privilege Level', value: diagnostics.elevated_privileges ? `Elevated Root (UID ${diagnostics.process_uid ?? 0})` : `Standard User (${diagnostics.process_user || 'non-root'})`, ok: diagnostics.elevated_privileges },
+                { label: 'Hardware Packet Capture (BPF)', value: diagnostics.raw_socket_capable ? 'Enabled (Full Raw Wire Access)' : 'Restricted (Run backend via sudo)', ok: diagnostics.raw_socket_capable },
                 { label: 'Python Runtime', value: diagnostics.python_version.split(' ')[0], ok: true },
                 { label: 'Host Platform', value: diagnostics.os_platform, ok: true },
                 { label: 'TShark Sniffer Binary', value: diagnostics.tshark_available ? 'Available' : 'Missing (Live sniff limited)', ok: diagnostics.tshark_available },

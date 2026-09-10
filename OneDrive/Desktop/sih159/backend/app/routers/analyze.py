@@ -770,11 +770,30 @@ async def get_diagnostics():
     import certifi
     import shutil
     
+    has_tshark = (
+        shutil.which("tshark") is not None
+        or os.path.exists("/opt/homebrew/bin/tshark")
+        or os.path.exists("/usr/local/bin/tshark")
+        or os.path.exists(r"C:\Program Files\Wireshark\tshark.exe")
+    )
+
+    is_root = hasattr(os, "geteuid") and os.geteuid() == 0
+    bpf_accessible = os.access("/dev/bpf0", os.R_OK | os.W_OK) if os.path.exists("/dev/bpf0") else is_root
+
     diagnostics = {
         "python_version": sys.version,
         "os_platform": platform.platform(),
-        "tshark_available": shutil.which("tshark") is not None or os.path.exists(r"C:\Program Files\Wireshark\tshark.exe"),
+        "tshark_available": has_tshark,
+        "elevated_privileges": is_root,
+        "raw_socket_capable": is_root or bpf_accessible,
+        "process_uid": os.geteuid() if hasattr(os, "geteuid") else -1,
     }
+
+    try:
+        import getpass
+        diagnostics["process_user"] = "root" if is_root else getpass.getuser()
+    except Exception:
+        diagnostics["process_user"] = "root" if is_root else "standard"
     
     try:
         import pyshark

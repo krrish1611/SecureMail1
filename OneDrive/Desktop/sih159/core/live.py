@@ -530,34 +530,37 @@ class LiveMonitor:
                 pass
 
     def start(self, duration: Optional[float] = None) -> None:
-        """Run resilient live capture: PyShark -> Scapy Native -> Active Streamer fallback."""
+        """Run resilient live capture: Scapy Native (preferred for raw socket) -> PyShark -> Active Streamer fallback."""
+        # Preference 1: Native Scapy sniffing (direct raw socket, clean timeout handling)
+        try:
+            self._start_scapy(duration)
+            return
+        except Exception as e:
+            print(f"[!] Scapy live capture failed ({e}), attempting PyShark fallback...")
+
+        # Preference 2: PyShark live capture
         has_tshark = shutil.which("tshark") is not None or (
             sys.platform == "win32" and os.path.exists(r"C:\Program Files\Wireshark\tshark.exe")
         )
-
         if has_tshark:
             try:
                 self._start_pyshark(duration)
                 return
             except Exception as e:
-                print(f"[!] PyShark live capture failed ({e}), attempting Scapy fallback...")
+                print(f"[!] PyShark live capture failed ({e}), attempting active stream fallback...")
 
-        # Fallback 2: Native Scapy sniffing
-        try:
-            self._start_scapy(duration)
-        except Exception as e:
-            err_msg = str(e)
-            print(f"[!] Native raw interface capture unavailable ({err_msg}). Switching to active stream engine.")
-            if self.on_status:
-                try:
-                    self.on_status("notice", {
-                        "engine": "active_stream",
-                        "message": "Notice: Hardware interface capture restricted by OS permissions. Operating in High-Fidelity Active Traffic Streamer Mode.",
-                        "tip": "To enable raw hardware BPF capture on macOS, run: sudo chmod 666 /dev/bpf*"
-                    })
-                except Exception:
-                    pass
-            self._start_active_stream(duration=duration, interface=self.interface)
+        # Preference 3: Fallback to High-Fidelity Active Traffic Streamer
+        print("[!] Native raw interface capture unavailable. Switching to active stream engine.")
+        if self.on_status:
+            try:
+                self.on_status("notice", {
+                    "engine": "active_stream",
+                    "message": "Notice: Hardware interface capture restricted by OS permissions. Operating in High-Fidelity Active Traffic Streamer Mode.",
+                    "tip": "To enable raw hardware BPF capture on macOS, run: sudo chmod 666 /dev/bpf*"
+                })
+            except Exception:
+                pass
+        self._start_active_stream(duration=duration, interface=self.interface)
 
     def start_simulation(
         self,
