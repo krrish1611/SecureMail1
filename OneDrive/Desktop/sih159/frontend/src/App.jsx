@@ -93,6 +93,9 @@ export default function App() {
   const [liveStats, setLiveStats] = useState({ packets: 0, bytes: 0, sessions: 0, elapsed: 0 })
   const [liveCompletedJob, setLiveCompletedJob] = useState(null)
   const [autoScroll, setAutoScroll] = useState(true)
+  const [liveProtocolFilter, setLiveProtocolFilter] = useState('all')
+  const [liveEngine, setLiveEngine] = useState('scapy')
+  const [liveNotice, setLiveNotice] = useState(null)
   const wsRef = useRef(null)
   const terminalBodyRef = useRef(null)
 
@@ -101,6 +104,11 @@ export default function App() {
   const [mlEval, setMlEval] = useState(null)
   const [mlEvaluating, setMlEvaluating] = useState(false)
   const [mlTraining, setMlTraining] = useState(false)
+  const [trainSource, setTrainSource] = useState('synthetic')
+  const [trainCsvFile, setTrainCsvFile] = useState(null)
+  const [trainNPerClass, setTrainNPerClass] = useState(500)
+  const [trainBaselineN, setTrainBaselineN] = useState(1500)
+  const [trainResult, setTrainResult] = useState(null)
 
   const [diagnostics, setDiagnostics] = useState(null)
   const [diagnosticsError, setDiagnosticsError] = useState(null)
@@ -120,6 +128,19 @@ export default function App() {
   const [webhookMinSev, setWebhookMinSev] = useState('high')
   const [webhookTestResult, setWebhookTestResult] = useState(null)
   const [webhookTesting, setWebhookTesting] = useState(false)
+
+  // Standout Features State: Domain Probe, Executive Summary, Email Auth, Trends & History
+  const [scanMode, setScanMode] = useState('pcap') // 'pcap' | 'domain'
+  const [targetDomain, setTargetDomain] = useState('')
+  const [probingDomain, setProbingDomain] = useState(false)
+  const [domainProbeStatus, setDomainProbeStatus] = useState('')
+  const [emailAuth, setEmailAuth] = useState(null)
+  const [executiveSummary, setExecutiveSummary] = useState(null)
+  const [execSummaryLoading, setExecSummaryLoading] = useState(false)
+  const [showRoadmap, setShowRoadmap] = useState(false)
+  const [historyScans, setHistoryScans] = useState([])
+  const [historyTrends, setHistoryTrends] = useState(null)
+  const [historyLoading, setHistoryLoading] = useState(false)
 
   const fileInputRef = useRef(null)
 
@@ -166,11 +187,127 @@ export default function App() {
 
 
   // Process completed job
+  const loadExecutiveSummary = async (id) => {
+    setExecSummaryLoading(true)
+    try {
+      const resp = await axios.get(`/api/jobs/${id}/executive-summary`)
+      setExecutiveSummary(resp.data)
+    } catch (e) {
+      console.error('Failed to load executive summary:', e)
+    } finally {
+      setExecSummaryLoading(false)
+    }
+  }
+
   const processJobData = async (data) => {
     setJobId(data.job_id)
     setOverall(data.overall)
+    if (data.email_auth) {
+      setEmailAuth(data.email_auth)
+    } else {
+      setEmailAuth(null)
+    }
     const sumRes = await axios.get(`/api/jobs/${data.job_id}/summary`)
     setSessions(sumRes.data)
+    loadExecutiveSummary(data.job_id)
+  }
+
+  const doProbeDomain = async (customDomain = null) => {
+    const domain = (customDomain || targetDomain).trim()
+    if (!domain) return
+    setProbingDomain(true)
+    setLoading(true)
+    setError(null)
+    setSessions([])
+    setOverall(null)
+    setDetailCache({})
+    setCompliance(null)
+    setEmailAuth(null)
+    setExecutiveSummary(null)
+    setExpandedSessions(new Set())
+    setActiveTab('analysis')
+    setDomainProbeStatus(`Querying MX records & auditing TLS for ${domain}...`)
+    try {
+      const resp = await axios.post('/api/tools/domain-probe', {
+        domain: domain,
+        use_ml: useML,
+        timeout: 6.0,
+      })
+      await processJobData(resp.data)
+    } catch (e) {
+      setError('Domain Probe failed: ' + (e.response?.data?.detail || e.message))
+    } finally {
+      setLoading(false)
+      setProbingDomain(false)
+      setDomainProbeStatus('')
+    }
+  }
+
+  const loadHistory = async () => {
+    setHistoryLoading(true)
+    try {
+      const resp = await axios.get('/api/history')
+      setHistoryScans(resp.data)
+    } catch (e) {
+      console.error('Failed to fetch history:', e)
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
+  const loadTrends = async () => {
+    try {
+      const resp = await axios.get('/api/history/trends')
+      setHistoryTrends(resp.data)
+    } catch (e) {
+      console.error('Failed to fetch trends:', e)
+    }
+  }
+
+  const rehydrateHistoryScan = async (scanId) => {
+    setLoading(true)
+    setActiveTab('analysis')
+    try {
+      const resp = await axios.get(`/api/history/${scanId}`)
+      const scan = resp.data
+      const p = scan.payload || {}
+      setJobId(scanId)
+      setOverall(p.overall || null)
+      setSessions(p.sessions || [])
+      setEmailAuth(p.email_auth || null)
+      loadExecutiveSummary(scanId)
+    } catch (e) {
+      setError('Failed to reload historical scan: ' + (e.response?.data?.detail || e.message))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteHistoryScan = async (scanId) => {
+    try {
+      await axios.delete(`/api/history/${scanId}`)
+      loadHistory()
+      loadTrends()
+    } catch (e) {
+      console.error('Failed to delete scan:', e)
+    }
+  }
+
+  const clearAllHistory = async () => {
+    if (!window.confirm('Clear all scan history? This action cannot be undone.')) return
+    try {
+      await axios.post('/api/history/clear')
+      loadHistory()
+      loadTrends()
+    } catch (e) {
+      console.error('Failed to clear history:', e)
+    }
+  }
+
+  const downloadPlaybookPdf = (id = null) => {
+    const targetId = id || jobId
+    if (!targetId) return
+    window.open(`/api/jobs/${targetId}/playbook/pdf`, '_blank')
   }
 
   // Analyze uploaded PCAP
@@ -313,11 +450,16 @@ export default function App() {
             sessions: (prev.sessions || 0) + 1,
           }))
         } else if (msg.type === 'status') {
-          if (msg.status === 'sniffing' && msg.stats) {
+          if (msg.stats?.engine) setLiveEngine(msg.stats.engine)
+          if (msg.stats?.note) setLiveNotice(msg.stats.note)
+          if (msg.status === 'notice' && msg.stats) {
+            setLiveNotice(msg.stats.message + (msg.stats.tip ? ` — ${msg.stats.tip}` : ''))
+          } else if (msg.status === 'sniffing' && msg.stats) {
             setLiveStats(prev => ({
               ...prev,
               ...msg.stats,
             }))
+            if (msg.stats.engine) setLiveEngine(msg.stats.engine)
             if (msg.stats.duration && msg.stats.elapsed) {
               setCaptureRemaining(Math.max(0, Math.round(msg.stats.duration - msg.stats.elapsed)))
             }
@@ -363,6 +505,7 @@ export default function App() {
     setLivePackets([])
     setLiveSessions([])
     setLiveCompletedJob(null)
+    setLiveNotice(null)
     setLiveStats({ packets: 0, bytes: 0, sessions: 0, elapsed: 0 })
     setLiveCapturing(true)
     setCaptureRemaining(liveDuration)
@@ -375,6 +518,7 @@ export default function App() {
         use_ml: useML,
         simulation: simulationMode,
         max_sessions: maxSessions,
+        protocol_filter: liveProtocolFilter,
       }))
     } else {
       alert('WebSocket is connecting to backend. Please retry in a moment.')
@@ -421,9 +565,29 @@ export default function App() {
 
   const trainMl = async () => {
     setMlTraining(true)
+    setTrainResult(null)
     try {
-      const resp = await axios.post('/api/tools/ml/train', { n_per_class: 500, baseline_n: 1500 })
-      alert('Training completed successfully!')
+      let resp
+      if (trainSource === 'csv') {
+        if (!trainCsvFile) {
+          alert('Please select a CSV baseline file first.')
+          setMlTraining(false)
+          return
+        }
+        const formData = new FormData()
+        formData.append('file', trainCsvFile)
+        resp = await axios.post(`/api/tools/ml/train-upload?n_per_class=${trainNPerClass}&baseline_n=${trainBaselineN}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+      } else {
+        resp = await axios.post('/api/tools/ml/train', {
+          n_per_class: trainNPerClass,
+          baseline_n: trainBaselineN,
+          source: trainSource,
+          job_id: jobId,
+        })
+      }
+      setTrainResult(resp.data?.details || resp.data)
       loadMlStatus()
     } catch (e) {
       alert('ML Training failed: ' + (e.response?.data?.detail || e.message))
@@ -450,8 +614,9 @@ export default function App() {
     setActiveTab(tab)
     if (tab === 'compliance') loadCompliance()
     if (tab === 'live') loadInterfaces()
-    if (tab === 'ml') loadMlStatus()
+    if (tab === 'ml') { loadMlStatus(); loadHistory(); }
     if (tab === 'diagnostics') loadDiagnostics()
+    if (tab === 'history') { loadHistory(); loadTrends(); }
   }
 
   // Session Accordion Toggle
@@ -694,93 +859,179 @@ export default function App() {
           </svg>
           System Diagnostics
         </button>
+
+        <button className={`nav-tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => handleTabSwitch('history')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+          </svg>
+          Trends &amp; History
+          {historyScans.length > 0 && <span className="tab-badge">{historyScans.length}</span>}
+        </button>
       </nav>
 
-      {/* Interactive PCAP Upload & Demo Hero */}
-      <div className={`upload-zone-wrapper ${isDragOver ? 'dragover' : ''}`}>
-        <div
-          className="dropzone-inner"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
+      {/* Mode Switcher: PCAP Upload vs Live Domain Probe */}
+      <div className="upload-mode-tabs">
+        <button
+          className={`upload-mode-btn ${scanMode === 'pcap' ? 'active' : ''}`}
+          onClick={() => setScanMode('pcap')}
         >
-          <input
-            type="file"
-            ref={fileInputRef}
-            accept=".pcap,.pcapng"
-            style={{ display: 'none' }}
-            onChange={(e) => setFile(e.target.files[0] || null)}
-          />
-          <div className="dropzone-icon">
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
-          </div>
-          <div className="dropzone-title">
-            {file ? file.name : 'Drag & drop capture file (.pcap, .pcapng) or click to browse'}
-          </div>
-          <div className="dropzone-subtitle">
-            Passive inspection of SMTP, IMAP, and POP3 network streams
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+          <span>PCAP File Upload</span>
+        </button>
+        <button
+          className={`upload-mode-btn ${scanMode === 'domain' ? 'active' : ''}`}
+          onClick={() => setScanMode('domain')}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+          <span>Live Domain Probe (No PCAP)</span>
+        </button>
+      </div>
+
+      {scanMode === 'pcap' ? (
+        /* Interactive PCAP Upload & Demo Hero */
+        <div className={`upload-zone-wrapper ${isDragOver ? 'dragover' : ''}`}>
+          <div
+            className="dropzone-inner"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".pcap,.pcapng"
+              style={{ display: 'none' }}
+              onChange={(e) => setFile(e.target.files[0] || null)}
+            />
+            <div className="dropzone-icon">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <div className="dropzone-title">
+              {file ? file.name : 'Drag & drop capture file (.pcap, .pcapng) or click to browse'}
+            </div>
+            <div className="dropzone-subtitle">
+              Passive inspection of SMTP, IMAP, and POP3 network streams
+            </div>
+
+            {file && (
+              <div className="file-selected-badge" onClick={(e) => e.stopPropagation()}>
+                <span>{file.name}</span>
+                <span style={{ color: 'var(--text-muted)' }}>({(file.size / 1024).toFixed(1)} KB)</span>
+                <button title="Remove file" onClick={() => setFile(null)}>✕</button>
+              </div>
+            )}
           </div>
 
-          {file && (
-            <div className="file-selected-badge" onClick={(e) => e.stopPropagation()}>
-              <span>{file.name}</span>
-              <span style={{ color: 'var(--text-muted)' }}>({(file.size / 1024).toFixed(1)} KB)</span>
-              <button title="Remove file" onClick={() => setFile(null)}>✕</button>
+          <div className="upload-actions-bar">
+            <div className="upload-options-group">
+              <label className="toggle-label">
+                <input type="checkbox" checked={useML} onChange={(e) => setUseML(e.target.checked)} />
+                <span>Use ML Posture &amp; Anomaly Models</span>
+              </label>
+
+              <div className="input-number-group">
+                <span>Max Sessions:</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={maxSessions}
+                  onChange={(e) => setMaxSessions(Math.max(0, Number(e.target.value)))}
+                  title="0 = analyze all streams"
+                />
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(0 = all)</span>
+              </div>
+            </div>
+
+            <div className="upload-btn-group">
+              <button className="btn-secondary" onClick={doLoadDemo} disabled={loading}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                Load Demo PCAP
+              </button>
+
+              <button className="btn-primary" onClick={doAnalyze} disabled={loading || !file}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                {loading ? 'Analyzing Streams…' : 'Run Posture Analysis'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Live Domain Probe Box */
+        <div className="domain-probe-box">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Live Mail Server &amp; Email Authentication Scanner
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                Actively queries MX records, establishes SMTP STARTTLS handshake, validates certificates, tests ciphers &amp; checks DMARC/SPF/DKIM live — no PCAP required.
+              </div>
+            </div>
+            <label className="toggle-label">
+              <input type="checkbox" checked={useML} onChange={(e) => setUseML(e.target.checked)} />
+              <span>Use ML Scoring</span>
+            </label>
+          </div>
+
+          <div className="domain-input-row">
+            <input
+              type="text"
+              className="domain-input-field"
+              placeholder="Enter domain name (e.g. gmail.com, cloudflare.com, yourcollege.edu)"
+              value={targetDomain}
+              onChange={(e) => setTargetDomain(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') doProbeDomain() }}
+            />
+            <button
+              className="domain-probe-btn"
+              onClick={() => doProbeDomain()}
+              disabled={loading || probingDomain || !targetDomain.trim()}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+              {probingDomain ? 'Probing Mail Servers…' : 'Probe Domain Live'}
+            </button>
+          </div>
+
+          <div className="domain-presets-row">
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Quick Presets:</span>
+            {['gmail.com', 'cloudflare.com', 'yahoo.com', 'proton.me', 'outlook.com'].map(d => (
+              <button
+                key={d}
+                className="domain-preset-chip"
+                onClick={() => { setTargetDomain(d); doProbeDomain(d); }}
+                disabled={loading || probingDomain}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+
+          {domainProbeStatus && (
+            <div style={{ fontSize: '12.5px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }}></div>
+              <span>{domainProbeStatus}</span>
             </div>
           )}
         </div>
+      )}
 
-        <div className="upload-actions-bar">
-          <div className="upload-options-group">
-            <label className="toggle-label">
-              <input type="checkbox" checked={useML} onChange={(e) => setUseML(e.target.checked)} />
-              <span>Use ML Posture &amp; Anomaly Models</span>
-            </label>
-
-            <div className="input-number-group">
-              <span>Max Sessions:</span>
-              <input
-                type="number"
-                min="0"
-                value={maxSessions}
-                onChange={(e) => setMaxSessions(Math.max(0, Number(e.target.value)))}
-                title="0 = analyze all streams"
-              />
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(0 = all)</span>
-            </div>
-          </div>
-
-          <div className="upload-btn-group">
-            <button className="btn-secondary" onClick={doLoadDemo} disabled={loading}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-              Load Demo PCAP
-            </button>
-
-            <button className="btn-primary" onClick={doAnalyze} disabled={loading || !file}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              {loading ? 'Analyzing Streams…' : 'Run Posture Analysis'}
-            </button>
-          </div>
+      {error && (
+        <div className="alert-banner error" style={{ marginTop: '14px' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>{error}</span>
         </div>
-
-        {error && (
-          <div className="alert-banner error">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-      </div>
+      )}
 
       {loading && (
         <div className="loading-card">
@@ -794,6 +1045,181 @@ export default function App() {
          ========================================================================== */}
       {activeTab === 'analysis' && overall && !loading && (
         <>
+          {/* Standout Feature: AI-Assisted Executive Summary & CISO Risk Briefing */}
+          {executiveSummary && (
+            <div className="executive-summary-card">
+              <div className="exec-header-row">
+                <div className="exec-badge-group">
+                  <div className="exec-grade-pill" style={{ backgroundColor: executiveSummary.grade_color }}>
+                    {executiveSummary.posture_grade}
+                  </div>
+                  <div>
+                    <div className="exec-headline-text">{executiveSummary.headline}</div>
+                    <div className="exec-target-subtext">
+                      Target: <b>{executiveSummary.target_name}</b> &nbsp;|&nbsp;
+                      Overall Score: <b>{executiveSummary.posture_score}/100</b> &nbsp;|&nbsp;
+                      Encrypted: <b>{executiveSummary.encrypted_ratio}%</b>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="chip-btn"
+                    style={{ background: 'var(--bg-app)', border: '1px solid var(--border-color)', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px' }}
+                    onClick={() => copyToClipboard(executiveSummary.executive_brief, 'exec-brief')}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                    <span>{copiedKey === 'exec-brief' ? '✓ Brief Copied' : 'Copy Brief'}</span>
+                  </button>
+                  <button
+                    className="btn-primary"
+                    style={{ padding: '6px 14px', fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    onClick={() => downloadPlaybookPdf()}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                    <span>Remediation Playbook (PDF)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Briefing Paragraphs */}
+              <div className="exec-brief-paragraphs">
+                {executiveSummary.summary_paragraphs?.map((p, idx) => (
+                  <p key={idx} style={{ margin: 0 }}>{p}</p>
+                ))}
+              </div>
+
+              {/* Metrics Strip */}
+              <div className="exec-metrics-strip">
+                <div className="exec-metric-item">
+                  <span className="exec-metric-label">HNDL Quantum Risk</span>
+                  <span className="exec-metric-val" style={{ color: executiveSummary.post_quantum_assessment?.hndl_risk === 'LOW' ? 'var(--sev-safe)' : 'var(--sev-critical)' }}>
+                    {executiveSummary.post_quantum_assessment?.hndl_risk || 'UNKNOWN'}
+                  </span>
+                </div>
+                <div className="exec-metric-item">
+                  <span className="exec-metric-label">Plaintext Credentials</span>
+                  <span className="exec-metric-val" style={{ color: executiveSummary.credentials_leaked > 0 ? 'var(--sev-critical)' : 'var(--sev-safe)' }}>
+                    {executiveSummary.credentials_leaked} Leaked
+                  </span>
+                </div>
+                <div className="exec-metric-item">
+                  <span className="exec-metric-label">STARTTLS Downgrades</span>
+                  <span className="exec-metric-val" style={{ color: executiveSummary.downgrade_attacks > 0 ? 'var(--sev-critical)' : 'var(--sev-safe)' }}>
+                    {executiveSummary.downgrade_attacks} Detected
+                  </span>
+                </div>
+                <div className="exec-metric-item">
+                  <span className="exec-metric-label">Regulatory Status</span>
+                  <span className="exec-metric-val" style={{ color: executiveSummary.compliance_summary?.status === 'COMPLIANT' ? 'var(--sev-safe)' : 'var(--sev-high)' }}>
+                    {executiveSummary.compliance_summary?.status || 'N/A'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actionable Remediation Roadmap Accordion */}
+              <div>
+                <button
+                  className="exec-roadmap-toggle-btn"
+                  onClick={() => setShowRoadmap(!showRoadmap)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points={showRoadmap ? "18 15 12 9 6 15" : "6 9 12 15 18 9"} />
+                  </svg>
+                  <span>{showRoadmap ? 'Hide Prioritized Remediation Roadmap' : 'View Prioritized 3-Phase Remediation Roadmap'}</span>
+                </button>
+
+                {showRoadmap && (
+                  <div className="exec-roadmap-container">
+                    {executiveSummary.actionable_roadmap?.map((phase, pIdx) => (
+                      <div key={pIdx} className="roadmap-phase-card" style={{ borderTopColor: phase.color }}>
+                        <div>
+                          <div className="phase-title">{phase.phase}</div>
+                          <div className="phase-timeframe">{phase.timeframe} &nbsp;|&nbsp; {phase.priority}</div>
+                        </div>
+                        <ul className="phase-action-list">
+                          {phase.actions.map((act, aIdx) => (
+                            <li key={aIdx}>{act}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Standout Feature: DMARC, SPF, DKIM Email Authentication Card */}
+          {emailAuth && (
+            <div className="email-auth-card">
+              <div className="email-auth-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div className="status-badge-compact" style={{ background: emailAuth.grade_color, color: '#fff', fontSize: '16px', fontWeight: 800, padding: '6px 14px' }}>
+                    Grade {emailAuth.grade} ({emailAuth.overall_score}/100)
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Email Authentication &amp; Anti-Spoofing Posture ({emailAuth.domain})
+                    </div>
+                    <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                      {emailAuth.summary}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="email-auth-grid">
+                {/* DMARC Subcard */}
+                <div className="email-auth-subcard">
+                  <span className="email-auth-subcard-title">DMARC Policy (RFC 7489)</span>
+                  <div className="email-auth-subcard-val" style={{ color: emailAuth.dmarc?.policy === 'reject' ? 'var(--sev-safe)' : (emailAuth.dmarc?.policy === 'quarantine' ? 'var(--sev-medium)' : 'var(--sev-critical)') }}>
+                    p={emailAuth.dmarc?.policy || 'none'}
+                    <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)' }}>
+                      ({emailAuth.dmarc?.spoofing_protected ? 'Spoofing Blocked' : 'Vulnerable to Spoofing'})
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                    Reports (rua): {emailAuth.dmarc?.rua?.length > 0 ? 'Configured' : 'Missing'} &nbsp;|&nbsp; Enforcement: {emailAuth.dmarc?.pct || 100}%
+                  </div>
+                </div>
+
+                {/* SPF Subcard */}
+                <div className="email-auth-subcard">
+                  <span className="email-auth-subcard-title">SPF Policy (RFC 7208)</span>
+                  <div className="email-auth-subcard-val" style={{ color: emailAuth.spf?.qualifier === '-all' ? 'var(--sev-safe)' : (emailAuth.spf?.qualifier === '~all' ? 'var(--sev-safe)' : 'var(--sev-high)') }}>
+                    {emailAuth.spf?.qualifier || 'No qualifier'} ({emailAuth.spf?.policy || 'none'})
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                    Lookups: {emailAuth.spf?.lookup_count || 0}/10 &nbsp;|&nbsp; Includes: {emailAuth.spf?.includes?.length || 0}
+                  </div>
+                </div>
+
+                {/* DKIM Subcard */}
+                <div className="email-auth-subcard">
+                  <span className="email-auth-subcard-title">DKIM Selectors (RFC 6376)</span>
+                  <div className="email-auth-subcard-val" style={{ color: emailAuth.dkim?.selectors_found > 0 ? 'var(--sev-safe)' : 'var(--text-muted)' }}>
+                    {emailAuth.dkim?.selectors_found > 0 ? `${emailAuth.dkim.selectors_found} Selector(s) Discovered` : 'No Standard Selectors'}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                    Probed: {emailAuth.dkim?.selectors_probed || 0} known provider keys
+                  </div>
+                </div>
+
+                {/* BIMI Subcard */}
+                <div className="email-auth-subcard">
+                  <span className="email-auth-subcard-title">BIMI Brand Indicator</span>
+                  <div className="email-auth-subcard-val" style={{ color: emailAuth.bimi?.present ? 'var(--sev-safe)' : 'var(--text-muted)' }}>
+                    {emailAuth.bimi?.present ? 'Active Brand Logo' : 'Not Configured'}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                    VMC Cert: {emailAuth.bimi?.vmc_cert ? 'Present' : 'None'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Interactive KPI Cards */}
           <div className="stats-grid-interactive">
             <div
@@ -1172,6 +1598,15 @@ export default function App() {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   CSV
                 </a>
+                <button
+                  className="export-btn"
+                  style={{ background: 'rgba(15, 118, 110, 0.15)', color: '#0f766e', borderColor: '#0f766e', cursor: 'pointer' }}
+                  onClick={() => downloadPlaybookPdf()}
+                  title="Export Automated Remediation Playbook (PDF)"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                  Playbook (PDF)
+                </button>
               </div>
             </div>
           </div>
@@ -1934,6 +2369,22 @@ export default function App() {
                 }}>
                   {wsConnected ? '● WS STREAM CONNECTED' : '○ WS CONNECTING…'}
                 </span>
+
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: '3px 9px',
+                  borderRadius: '12px',
+                  background: liveEngine === 'pyshark' ? 'rgba(14, 165, 233, 0.15)' : (liveEngine === 'scapy' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(234, 179, 8, 0.15)'),
+                  color: liveEngine === 'pyshark' ? '#0ea5e9' : (liveEngine === 'scapy' ? '#a855f7' : '#eab308'),
+                  border: '1px solid currentColor',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}>
+                  {liveEngine === 'pyshark' ? '⚡ PYSHARK WIRE' : (liveEngine === 'scapy' ? '🐍 SCAPY SNIFFER' : (simulationMode ? '📦 PCAP REPLAY' : '🧪 ACTIVE STREAM ENGINE'))}
+                </span>
+
                 {liveCapturing && (
                   <span style={{
                     fontSize: '11px',
@@ -1957,6 +2408,34 @@ export default function App() {
             <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '20px' }}>
               Sniff live packets across local network interfaces or simulate mail traffic streams, reassembling TCP flows in flight and assessing email TLS cryptographic posture via WebSocket in real time.
             </p>
+
+            {/* Active Notice / OS Permission Tip */}
+            {liveNotice && (
+              <div style={{
+                background: 'rgba(234, 179, 8, 0.1)',
+                border: '1px solid rgba(234, 179, 8, 0.3)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                color: '#facc15',
+                fontSize: '12px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '15px' }}>ℹ️</span>
+                  <span>{liveNotice}</span>
+                </div>
+                <button
+                  onClick={() => setLiveNotice(null)}
+                  style={{ background: 'none', border: 'none', color: '#facc15', cursor: 'pointer', fontWeight: 700 }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {/* Controls Bar */}
             <div className="live-controls-bar">
@@ -1991,7 +2470,7 @@ export default function App() {
                     value={selectedInterface}
                     onChange={(e) => setSelectedInterface(e.target.value)}
                     disabled={liveCapturing}
-                    style={{ padding: '6px 12px', fontSize: '12.5px', minWidth: '280px' }}
+                    style={{ padding: '6px 12px', fontSize: '12.5px', minWidth: '260px' }}
                   >
                     {interfaces.map(i => (
                       <option key={i.name} value={i.name}>
@@ -2001,7 +2480,7 @@ export default function App() {
                   </select>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxWidth: '320px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxWidth: '300px' }}>
                   <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Simulation Dataset:</label>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-app)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
                     📦 Replaying realistic SMTP/IMAP/POP3 email streams from sample PCAP
@@ -2009,8 +2488,26 @@ export default function App() {
                 </div>
               )}
 
+              {/* Protocol Filter */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '180px' }}>
+                <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Protocol Filter:</label>
+                <select
+                  id="live-protocol-filter"
+                  className="custom-select"
+                  value={liveProtocolFilter}
+                  onChange={(e) => setLiveProtocolFilter(e.target.value)}
+                  disabled={liveCapturing}
+                  style={{ padding: '6px 12px', fontSize: '12.5px' }}
+                >
+                  <option value="all">All Mail (25, 465, 587, 143, 993, 110, 995)</option>
+                  <option value="smtp">SMTP Only (25, 465, 587)</option>
+                  <option value="imap">IMAP Only (143, 993)</option>
+                  <option value="pop3">POP3 Only (110, 995)</option>
+                </select>
+              </div>
+
               {/* Duration Slider */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '160px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '150px' }}>
                 <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
                   Duration: <b>{liveDuration}s</b>
                 </label>
@@ -2281,13 +2778,222 @@ export default function App() {
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                <button className="btn-primary" onClick={evaluateMl} disabled={mlEvaluating}>
-                  {mlEvaluating ? 'Evaluating Metrics…' : 'Run Model Evaluation'}
-                </button>
-                <button className="btn-secondary" onClick={trainMl} disabled={mlTraining}>
-                  {mlTraining ? 'Training Models…' : 'Retrain On Baselines'}
-                </button>
+              {/* Enterprise Baseline Retraining Control Panel */}
+              <div className="forensic-box" style={{ marginBottom: '24px', background: 'var(--panel-bg)', border: '1px solid var(--border-color)' }}>
+                <div className="forensic-box-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                    </svg>
+                    <span>Enterprise Baseline Retraining &amp; Model Calibration</span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Continuous Machine Learning Model Tuning
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                  Calibrate the Isolation Forest anomaly baseline and Random Forest risk classifier on your organization's real observed mail traffic patterns, SQLite audit history, custom CSV exports, or high-variance benchmark vectors.
+                </p>
+
+                {/* Source Selection Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                  <div
+                    onClick={() => setTrainSource('synthetic')}
+                    style={{
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: `1.5px solid ${trainSource === 'synthetic' ? 'var(--accent-blue)' : 'var(--border-color)'}`,
+                      background: trainSource === 'synthetic' ? 'rgba(14, 165, 233, 0.08)' : 'var(--bg-app)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '12.5px', color: trainSource === 'synthetic' ? 'var(--accent-blue)' : 'var(--text-primary)' }}>
+                      <span>🌐</span>
+                      <span>Synthetic Benchmark</span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Balanced multi-class cryptographic distribution with full 17 feature dimensions.
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setTrainSource('active_sessions')}
+                    style={{
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: `1.5px solid ${trainSource === 'active_sessions' ? 'var(--accent-blue)' : 'var(--border-color)'}`,
+                      background: trainSource === 'active_sessions' ? 'rgba(14, 165, 233, 0.08)' : 'var(--bg-app)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      opacity: sessions.length > 0 ? 1 : 0.6
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '12.5px', color: trainSource === 'active_sessions' ? 'var(--accent-blue)' : 'var(--text-primary)' }}>
+                      <span>🛡️</span>
+                      <span>Current Inspected Traffic</span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Retrain on {sessions.length} sessions currently in memory from recent scan.
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setTrainSource('history')}
+                    style={{
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: `1.5px solid ${trainSource === 'history' ? 'var(--accent-blue)' : 'var(--border-color)'}`,
+                      background: trainSource === 'history' ? 'rgba(14, 165, 233, 0.08)' : 'var(--bg-app)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      opacity: historyScans.length > 0 ? 1 : 0.6
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '12.5px', color: trainSource === 'history' ? 'var(--accent-blue)' : 'var(--text-primary)' }}>
+                      <span>🗄️</span>
+                      <span>Historical Archive</span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Aggregate all past sessions persisted in SQLite database ({historyScans.length} scans).
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setTrainSource('csv')}
+                    style={{
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: `1.5px solid ${trainSource === 'csv' ? 'var(--accent-blue)' : 'var(--border-color)'}`,
+                      background: trainSource === 'csv' ? 'rgba(14, 165, 233, 0.08)' : 'var(--bg-app)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '12.5px', color: trainSource === 'csv' ? 'var(--accent-blue)' : 'var(--text-primary)' }}>
+                      <span>📁</span>
+                      <span>Upload Custom CSV</span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Import custom enterprise network capture feature matrix.
+                    </div>
+                  </div>
+                </div>
+
+                {/* CSV File Input */}
+                {trainSource === 'csv' && (
+                  <div style={{ marginBottom: '16px', background: 'var(--bg-app)', padding: '12px', borderRadius: '6px', border: '1px dashed var(--border-color)' }}>
+                    <label style={{ fontSize: '11.5px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Select Baseline CSV File:</label>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={(e) => setTrainCsvFile(e.target.files[0] || null)}
+                      style={{ fontSize: '12px' }}
+                    />
+                    {trainCsvFile && (
+                      <span style={{ fontSize: '11px', color: 'var(--sev-safe)', marginLeft: '10px' }}>
+                        ✓ {trainCsvFile.name} ({(trainCsvFile.size / 1024).toFixed(1)} KB)
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Training Hyperparameters */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'center', marginBottom: '18px' }}>
+                  <div>
+                    <label style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                      Samples Per Class: <b>{trainNPerClass}</b>
+                    </label>
+                    <input
+                      type="range"
+                      min="100"
+                      max="2000"
+                      step="50"
+                      value={trainNPerClass}
+                      onChange={(e) => setTrainNPerClass(Number(e.target.value))}
+                      disabled={mlTraining}
+                      style={{ width: '150px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                      Anomaly Baseline Size: <b>{trainBaselineN}</b>
+                    </label>
+                    <input
+                      type="range"
+                      min="300"
+                      max="5000"
+                      step="100"
+                      value={trainBaselineN}
+                      onChange={(e) => setTrainBaselineN(Number(e.target.value))}
+                      disabled={mlTraining}
+                      style={{ width: '150px' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <button
+                    className="btn-primary"
+                    onClick={trainMl}
+                    disabled={mlTraining || (trainSource === 'active_sessions' && sessions.length === 0) || (trainSource === 'history' && historyScans.length === 0) || (trainSource === 'csv' && !trainCsvFile)}
+                    style={{ padding: '9px 18px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
+                  >
+                    {mlTraining ? (
+                      <>
+                        <span className="live-pulse-dot"></span>
+                        <span>Retraining ML Pipeline…</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                        <span>Retrain On Baseline ({trainSource.replace('_', ' ').toUpperCase()})</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button className="btn-secondary" onClick={evaluateMl} disabled={mlEvaluating}>
+                    {mlEvaluating ? 'Evaluating Metrics…' : 'Run Model Evaluation Benchmark'}
+                  </button>
+                </div>
+
+                {/* Training Result Feedback Banner */}
+                {trainResult && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '14px',
+                    borderRadius: '8px',
+                    background: 'rgba(56, 168, 86, 0.1)',
+                    border: '1px solid rgba(56, 168, 86, 0.3)',
+                    color: '#e5e7eb'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: 'var(--sev-safe)' }}>
+                        <span>✓</span>
+                        <span>Models Retrained &amp; Persisted Successfully!</span>
+                      </div>
+                      <button
+                        onClick={evaluateMl}
+                        className="btn-primary"
+                        style={{ fontSize: '11px', padding: '4px 10px', background: 'var(--sev-safe)', color: '#000', fontWeight: 700 }}
+                      >
+                        Evaluate New Weights
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <span>Source: <b style={{ color: '#fff' }}>{trainResult.source || 'Synthetic'}</b></span>
+                      <span>Classifier Pool: <b style={{ color: '#fff' }}>{trainResult.classifier} vectors</b></span>
+                      <span>Anomaly Baseline: <b style={{ color: '#fff' }}>{trainResult.baseline} vectors</b></span>
+                      {trainResult.class_distribution && (
+                        <span>
+                          Distribution: Low={trainResult.class_distribution['0'] || 0} | Med={trainResult.class_distribution['1'] || 0} | High={trainResult.class_distribution['2'] || 0} | Crit={trainResult.class_distribution['3'] || 0}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {mlEval && (
@@ -2416,6 +3122,206 @@ export default function App() {
         </div>
       )}
 
+      {/* ==========================================================================
+          TRENDS & HISTORY TAB
+         ========================================================================== */}
+      {activeTab === 'history' && (
+        <div className="history-view-container">
+          {/* Summary Stat Cards */}
+          <div className="history-stats-grid">
+            <div className="history-stat-card">
+              <span className="exec-metric-label">Total Scans Conducted</span>
+              <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--primary)' }}>
+                {historyTrends?.total_scans || historyScans.length}
+              </span>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Persistent in SQLite database</span>
+            </div>
+
+            <div className="history-stat-card">
+              <span className="exec-metric-label">Overall Average Score</span>
+              <span style={{ fontSize: '24px', fontWeight: 800, color: '#1982c4' }}>
+                {historyTrends?.overall_avg_score || '0.0'}/100
+              </span>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Across all historical evaluations</span>
+            </div>
+
+            <div className="history-stat-card">
+              <span className="exec-metric-label">Critical Flaws Detected</span>
+              <span style={{ fontSize: '24px', fontWeight: 800, color: '#ff595e' }}>
+                {historyTrends?.total_critical_detected || 0}
+              </span>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Plaintext &amp; downgrade flaws</span>
+            </div>
+
+            <div className="history-stat-card">
+              <span className="exec-metric-label">Database Storage</span>
+              <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '6px' }}>
+                output/history.db
+              </span>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Persistent across restarts</span>
+            </div>
+          </div>
+
+          {/* Time-Series Trend Chart */}
+          <div className="history-chart-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Cryptographic Security Posture Progression
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  Chronological progression of Posture Scores and encryption health across audits
+                </div>
+              </div>
+              <button className="btn-secondary" onClick={() => { loadHistory(); loadTrends(); }} disabled={historyLoading}>
+                Refresh
+              </button>
+            </div>
+
+            {historyTrends?.points?.length > 1 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={historyTrends.points} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="date_label" stroke="var(--text-muted)" fontSize={11} />
+                  <YAxis domain={[0, 100]} stroke="var(--text-muted)" fontSize={11} />
+                  <Tooltip content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const d = payload[0].payload
+                      return (
+                        <div className="custom-recharts-tooltip">
+                          <p style={{ fontWeight: 700, color: 'var(--primary)' }}>{d.target} ({d.scan_type.toUpperCase()})</p>
+                          <p>Posture Score: <b>{d.posture_score}/100</b></p>
+                          <p>Encrypted Ratio: <b>{d.encrypted_ratio}%</b></p>
+                          <p>Critical Flaws: <span style={{ color: '#ff595e' }}>{d.critical_findings}</span></p>
+                        </div>
+                      )
+                    }
+                    return null
+                  }} />
+                  <Area type="monotone" dataKey="posture_score" stroke="var(--primary)" strokeWidth={2.5} fillOpacity={1} fill="url(#scoreGradient)" name="Posture Score" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                Run at least two scans (PCAP upload, live capture, or domain probe) to populate the progression trend line.
+              </div>
+            )}
+          </div>
+
+          {/* Historical Scans Table */}
+          <div className="history-table-card">
+            <div className="history-table-header">
+              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Assessment History ({historyScans.length})
+              </div>
+              {historyScans.length > 0 && (
+                <button
+                  className="history-action-btn delete"
+                  onClick={clearAllHistory}
+                >
+                  Clear All History
+                </button>
+              )}
+            </div>
+
+            {historyScans.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>Target</th>
+                      <th>Type</th>
+                      <th>Date</th>
+                      <th>Sessions</th>
+                      <th>Score</th>
+                      <th>Verdict</th>
+                      <th>Flaws (Crit / High / Med)</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyScans.map((s) => (
+                      <tr key={s.id}>
+                        <td>
+                          <b>{s.target_name}</b>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{s.id}</div>
+                        </td>
+                        <td>
+                          <span className={`scan-type-badge ${s.scan_type}`}>
+                            {s.scan_type}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          {s.timestamp?.replace('T', ' ')?.slice(0, 16)}
+                        </td>
+                        <td>{s.session_count}</td>
+                        <td>
+                          <span className="score-badge-pill" style={{
+                            color: s.avg_posture_score >= 80 ? 'var(--sev-safe)' : (s.avg_posture_score >= 50 ? 'var(--sev-medium)' : 'var(--sev-critical)'),
+                            fontWeight: 800,
+                          }}>
+                            {s.avg_posture_score}/100
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`status-badge-compact ${s.compliance_verdict === 'COMPLIANT' ? 'encrypted' : 'plaintext'}`}>
+                            {s.compliance_verdict}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <span style={{ color: '#ff595e', fontWeight: 700 }}>{s.critical_findings}C</span>
+                            <span>/</span>
+                            <span style={{ color: '#ff924c', fontWeight: 700 }}>{s.high_findings}H</span>
+                            <span>/</span>
+                            <span style={{ color: '#ffca3a', fontWeight: 700 }}>{s.medium_findings}M</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              className="history-action-btn"
+                              title="Rehydrate and open in Analysis dashboard"
+                              onClick={() => rehydrateHistoryScan(s.id)}
+                            >
+                              Open
+                            </button>
+                            <button
+                              className="history-action-btn"
+                              title="Download Remediation Playbook PDF"
+                              onClick={() => downloadPlaybookPdf(s.id)}
+                            >
+                              Playbook
+                            </button>
+                            <button
+                              className="history-action-btn delete"
+                              title="Delete from history"
+                              onClick={() => deleteHistoryScan(s.id)}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                No historical scans recorded yet. Upload a PCAP or run a Live Domain Probe to record assessments.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
 
       {hardeningModalOpen && (
         <div className="modal-backdrop" onClick={() => setHardeningModalOpen(false)}>
@@ -2534,6 +3440,21 @@ export default function App() {
                     </div>
                   )
                 })()}
+
+                {/* Remediation Playbook PDF Action inside Modal */}
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    Export complete multi-daemon remediation playbook with pre-flight backups &amp; verification commands:
+                  </span>
+                  <button
+                    className="btn-primary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '12.5px' }}
+                    onClick={() => downloadPlaybookPdf()}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                    Download Full Playbook (PDF)
+                  </button>
+                </div>
               </div>
             ) : null}
           </div>

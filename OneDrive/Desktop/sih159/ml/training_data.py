@@ -24,11 +24,12 @@ def _idx(name: str) -> int:
 # (low, high) range for continuous features or a probability for binary ones.
 _PROFILES: Dict[int, Dict[str, tuple]] = {
     0: {  # low risk - modern, well-configured
+        "is_starttls": (0.75,),
         "is_encrypted": (0.97,),
         "plaintext": (0.02,),
         "starttls_stripped": (0.0,),
         "creds_plaintext": (0.0,),
-        "tls_version_rank": (5.0, 6.0),          # TLS 1.2 / 1.3
+        "tls_version_rank": (4.0, 5.0),          # TLS 1.2 / 1.3
         "cipher_strength": (8.0, 10.0),
         "has_forward_secrecy": (0.98,),
         "cert_valid_chain": (0.97,),
@@ -36,14 +37,18 @@ _PROFILES: Dict[int, Dict[str, tuple]] = {
         "cert_self_signed": (0.0,),
         "pubkey_size": (2048.0, 4096.0),
         "uses_sha1_sig": (0.0,),
+        "sess_bytes": (2500.0, 25000.0),
+        "num_packets": (14.0, 60.0),
+        "duration_s": (0.4, 4.0),
         "weak_offered": (0.03,),
     },
     1: {  # medium - functional but dated
+        "is_starttls": (0.6,),
         "is_encrypted": (0.9,),
         "plaintext": (0.1,),
         "starttls_stripped": (0.05,),
         "creds_plaintext": (0.05,),
-        "tls_version_rank": (4.0, 5.0),          # TLS 1.1 / 1.2
+        "tls_version_rank": (3.0, 4.0),          # TLS 1.1 / 1.2
         "cipher_strength": (4.0, 7.0),
         "has_forward_secrecy": (0.5,),
         "cert_valid_chain": (0.8,),
@@ -51,14 +56,18 @@ _PROFILES: Dict[int, Dict[str, tuple]] = {
         "cert_self_signed": (0.1,),
         "pubkey_size": (1024.0, 2048.0),
         "uses_sha1_sig": (0.3,),
+        "sess_bytes": (1800.0, 20000.0),
+        "num_packets": (10.0, 50.0),
+        "duration_s": (0.6, 6.0),
         "weak_offered": (0.4,),
     },
     2: {  # high - clearly poor config
+        "is_starttls": (0.4,),
         "is_encrypted": (0.7,),
         "plaintext": (0.3,),
         "starttls_stripped": (0.25,),
         "creds_plaintext": (0.3,),
-        "tls_version_rank": (2.0, 4.0),          # TLS 1.0 / 1.1
+        "tls_version_rank": (2.0, 3.0),          # TLS 1.0 / 1.1
         "cipher_strength": (1.0, 4.0),
         "has_forward_secrecy": (0.15,),
         "cert_valid_chain": (0.4,),
@@ -66,9 +75,13 @@ _PROFILES: Dict[int, Dict[str, tuple]] = {
         "cert_self_signed": (0.4,),
         "pubkey_size": (512.0, 1024.0),
         "uses_sha1_sig": (0.7,),
+        "sess_bytes": (900.0, 15000.0),
+        "num_packets": (6.0, 35.0),
+        "duration_s": (0.8, 8.0),
         "weak_offered": (0.8,),
     },
     3: {  # critical - broken / attack indicators
+        "is_starttls": (0.2,),
         "is_encrypted": (0.4,),
         "plaintext": (0.6,),
         "starttls_stripped": (0.5,),
@@ -81,11 +94,14 @@ _PROFILES: Dict[int, Dict[str, tuple]] = {
         "cert_self_signed": (0.8,),
         "pubkey_size": (256.0, 1024.0),
         "uses_sha1_sig": (0.9,),
+        "sess_bytes": (400.0, 10000.0),
+        "num_packets": (4.0, 25.0),
+        "duration_s": (0.2, 5.0),
         "weak_offered": (0.95,),
     },
 }
 
-_BINARY = {"is_encrypted", "plaintext", "starttls_stripped", "creds_plaintext",
+_BINARY = {"is_starttls", "is_encrypted", "plaintext", "starttls_stripped", "creds_plaintext",
            "has_forward_secrecy", "cert_valid_chain", "cert_expired",
            "cert_self_signed", "uses_sha1_sig", "weak_offered"}
 
@@ -176,3 +192,66 @@ def to_csv(X: np.ndarray, y: np.ndarray, path: str):
     df = pd.DataFrame(X, columns=FEATURE_NAMES)
     df["label"] = y
     df.to_csv(path, index=False)
+
+
+def extract_baseline_from_sessions(sessions: List[Any]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Extract classifier training pairs (X, y) and anomaly baseline vectors (X_base) from sessions.
+
+    Works with Session objects or serialized session dictionaries.
+    Returns:
+        (X, y, X_base)
+    """
+    from ml.features import extract_features
+    from core.models import Session
+
+    X_list = []
+    y_list = []
+    base_list = []
+
+    for s in sessions:
+        if isinstance(s, dict):
+            if "features" in s and isinstance(s["features"], dict):
+                feats = s["features"]
+            else:
+                try:
+                    sess_obj = Session(**{k: v for k, v in s.items() if k in getattr(Session, "__annotations__", {})})
+                    feats = extract_features(sess_obj)
+                except Exception:
+                    feats = {name: float(s.get(name, 0.0)) for name in FEATURE_NAMES}
+            risk_label = s.get("risk_label", "low")
+            posture_score = float(s.get("posture_score", 100.0) or 100.0)
+        else:
+            feats = extract_features(s)
+            risk_label = getattr(s, "risk_label", "low") or "low"
+            posture_score = float(getattr(s, "posture_score", 100.0) or 100.0)
+
+        vec = np.array([float(feats.get(name, 0.0)) for name in FEATURE_NAMES])
+        X_list.append(vec)
+
+        # Determine risk label 0..3
+        label_map = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+        if risk_label in label_map:
+            label = label_map[risk_label]
+        elif posture_score >= 85:
+            label = 0
+        elif posture_score >= 70:
+            label = 1
+        elif posture_score >= 40:
+            label = 2
+        else:
+            label = 3
+        y_list.append(label)
+
+        # Baseline pool for AnomalyDetector (normal approved mail traffic)
+        if label in (0, 1) or posture_score >= 70:
+            base_list.append(vec)
+
+    if not base_list and X_list:
+        base_list = list(X_list)
+
+    return (
+        np.array(X_list) if X_list else np.empty((0, len(FEATURE_NAMES))),
+        np.array(y_list, dtype=int) if y_list else np.empty((0,), dtype=int),
+        np.array(base_list) if base_list else np.empty((0, len(FEATURE_NAMES)))
+    )
+

@@ -82,3 +82,55 @@ def test_anomaly_detector_baseline_behaviour():
 def test_rule_posture_score_bounds():
     s = _session()
     assert rule_based_posture_score(s) == 100.0
+
+
+def test_train_models_with_sessions():
+    from ml.models import train_models
+    s1 = _session()
+    s1.encrypted = True
+    s1.tls = TLSInfo(version="TLSv1.3", cipher_suite="TLS_AES_128_GCM_SHA256")
+    s1.posture_score = 95.0
+
+    s2 = _session()
+    s2.plaintext = True
+    s2.posture_score = 25.0
+
+    res = train_models(n_per_class=50, baseline_n=100, sessions=[s1, s2], source_name="test_sessions")
+    assert res["classifier"] > 0
+    assert res["baseline"] > 0
+    assert res["source"] == "test_sessions"
+
+
+def test_train_models_api_and_upload():
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+    from backend.app.routers.analyze import _jobs
+
+    client = TestClient(app)
+
+    # 1. Test training on active sessions
+    s = _session()
+    s.encrypted = True
+    _jobs["test_job_ml"] = {"sessions": [s], "pcap": "test.pcap"}
+
+    resp = client.post("/api/tools/ml/train", json={"source": "active_sessions", "job_id": "test_job_ml", "n_per_class": 50, "baseline_n": 100})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ok"
+    assert "Active SOC Sessions" in data["details"]["source"]
+
+    # 2. Test CSV upload
+    csv_content = (
+        "is_starttls,is_encrypted,plaintext,starttls_stripped,creds_plaintext,"
+        "tls_version_rank,cipher_strength,has_forward_secrecy,cert_valid_chain,"
+        "cert_expired,cert_self_signed,pubkey_size,uses_sha1_sig,sess_bytes,num_packets,duration_s,weak_offered,label\n"
+        "1.0,1.0,0.0,0.0,0.0,4.0,10.0,1.0,1.0,0.0,0.0,2048.0,0.0,5000.0,20.0,1.5,0.0,0\n"
+        "0.0,0.0,1.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,1.0,512.0,1.0,800.0,5.0,0.5,1.0,3\n"
+    )
+    resp_upload = client.post(
+        "/api/tools/ml/train-upload?n_per_class=50&baseline_n=100",
+        files={"file": ("custom_baseline.csv", csv_content.encode("utf-8"), "text/csv")}
+    )
+    assert resp_upload.status_code == 200
+    assert resp_upload.json()["status"] == "ok"
+

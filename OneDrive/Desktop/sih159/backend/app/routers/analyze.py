@@ -21,17 +21,24 @@ from ml.models import MLPostureScorer, rule_based_posture_score
 from reports.exporters import generate_json, generate_html, generate_pdf, generate_csv
 from reports.hardening import generate_hardening_package
 from core.alerting import WebhookDispatcher
+from core.domain_probe import probe_domain
+from core.email_auth import evaluate_email_auth
+from core.executive_summary import generate_executive_summary
+from core.history import save_scan, get_history, get_scan, delete_scan, clear_history, get_trends
+from reports.playbook import generate_playbook_data, generate_playbook_pdf
 
 from ..schemas import (
     AnalyzeResponse, OverallStats, SessionSummary, SessionDetail,
     TLSDetails, CertDetails, DnsSecurityModel, FindingModel, ComplianceReportModel,
     PqcDetails, AttributionDetails, HardeningPackageModel, HardeningSnippetModel,
     WebhookTestRequest, WebhookTestResponse,
+    DomainProbeRequest, EmailAuthDetails, ExecutiveSummaryModel,
+    HistoricalScanSummary, HistoryTrendsResponse,
 )
 
 router = APIRouter(prefix="/api", tags=["analysis"])
 
-_jobs = {}   # job_id -> {"sessions": [...], "pcap": str}
+_jobs = {}   # job_id -> {"sessions": [...], "pcap": str, "target_name": str}
 
 
 def _overall_stats(sessions) -> OverallStats:
@@ -204,14 +211,20 @@ async def analyze_pcap(file: UploadFile = File(...), use_ml: bool = True):
             s.posture_score = rule_based_posture_score(s)
 
     job_id = uuid.uuid4().hex[:12]
-    _jobs[job_id] = {"sessions": sessions, "pcap": pcap_path}
+    overall = _overall_stats(sessions)
+    target_name = file.filename or "input.pcap"
+    _jobs[job_id] = {"sessions": sessions, "pcap": pcap_path, "target_name": target_name}
+    try:
+        save_scan(job_id, target_name, "pcap", sessions, overall=overall)
+    except Exception:
+        pass
     return AnalyzeResponse(
         status="ok",
         message=f"Analysed {len(sessions)} email sessions",
         job_id=job_id,
         pcap_filename=file.filename,
         session_count=len(sessions),
-        overall=_overall_stats(sessions),
+        overall=overall,
     )
 
 
@@ -290,6 +303,8 @@ from typing import Optional
 class MLTrainRequest(BaseModel):
     n_per_class: int = 500
     baseline_n: int = 1500
+    source: str = "synthetic"  # "synthetic", "active_sessions", "history"
+    job_id: Optional[str] = None
 
 class LiveCaptureRequest(BaseModel):
     interface: str
@@ -321,7 +336,12 @@ async def generate_sample_pcap_endpoint(use_ml: bool = True):
             s.risk_label = "unknown"
             
     job_id = uuid.uuid4().hex[:12]
-    _jobs[job_id] = {"sessions": sessions, "pcap": pcap_path}
+    overall = _overall_stats(sessions)
+    _jobs[job_id] = {"sessions": sessions, "pcap": pcap_path, "target_name": "sample_traffic.pcap"}
+    try:
+        save_scan(job_id, "sample_traffic.pcap", "pcap", sessions, overall=overall)
+    except Exception:
+        pass
     
     return AnalyzeResponse(
         status="ok",
@@ -329,12 +349,12 @@ async def generate_sample_pcap_endpoint(use_ml: bool = True):
         job_id=job_id,
         pcap_filename="sample_traffic.pcap",
         session_count=len(sessions),
-        overall=_overall_stats(sessions),
+        overall=overall,
     )
 
 @router.get("/tools/interfaces")
 async def get_interfaces():
-    # 1. Prefer tshark -D to get exact indices recognized by pyshark / tshark on this system
+    # 1. Prefer tshark -D if tshark is installed
     import subprocess
     import shutil
     tshark_bin = shutil.which("tshark") or (r"C:\Program Files\Wireshark\tshark.exe" if os.path.exists(r"C:\Program Files\Wireshark\tshark.exe") else None)
@@ -347,41 +367,58 @@ async def get_interfaces():
                 if m:
                     idx, dev, friendly = m.groups()
                     desc = friendly if friendly else dev
-                    ip = "172.20.10.3" if ("wi-fi" in desc.lower() or "wifi" in desc.lower()) else ""
-                    interfaces.append({"name": idx, "description": f"{desc} (#{idx})", "ip": ip, "guid": dev})
+                    interfaces.append({"name": dev, "description": f"{desc} ({dev})", "ip": "", "guid": dev})
             if interfaces:
-                # Place Wi-Fi / Ethernet at the front
-                def sort_key(item):
-                    d = item["description"].lower()
-                    if "wi-fi" in d or "wifi" in d:
-                        return 0
-                    if "ethernet" in d and "vmware" not in d:
-                        return 1
-                    return 2
-                interfaces.sort(key=sort_key)
                 return {"interfaces": interfaces}
         except Exception:
             pass
 
-    # 2. Fallback to psutil
+    # 2. Native socket + scapy resolution (provides exact system device names like en0, lo0)
+    interfaces = []
     try:
-        import psutil
-        addrs = psutil.net_if_addrs()
-        interfaces = []
-        for name, addrs_list in addrs.items():
-            ip = ""
-            for a in addrs_list:
-                if str(a.family) == "AddressFamily.AF_INET":
-                    ip = a.address
-                    break
-            interfaces.append({"name": name, "description": name, "ip": ip, "guid": name})
-        return {"interfaces": interfaces}
-    except ImportError:
         import socket
-        try:
-            return {"interfaces": [{"name": str(idx), "description": name, "ip": "", "guid": str(idx)} for idx, name in socket.if_nameindex()]}
-        except AttributeError:
-            return {"interfaces": [{"name": "Wi-Fi", "description": "Wi-Fi", "ip": "", "guid": "Wi-Fi"}]}
+        from scapy.all import get_if_addr
+        for idx, if_name in socket.if_nameindex():
+            # Skip noise virtual interfaces
+            if any(p in if_name.lower() for p in ("awdl", "llw", "anpi", "bridge", "utun", "gif", "stf")):
+                continue
+            ip = ""
+            try:
+                addr = get_if_addr(if_name)
+                if addr and addr != "0.0.0.0":
+                    ip = addr
+            except Exception:
+                ip = ""
+
+            desc = if_name
+            if if_name == "en0":
+                desc = "en0 (Wi-Fi / Primary Interface)"
+            elif if_name == "lo0":
+                desc = "lo0 (Local Loopback Interface)"
+            elif "en" in if_name or "eth" in if_name:
+                desc = f"{if_name} (Ethernet Adapter)"
+
+            if ip:
+                desc += f" — {ip}"
+
+            interfaces.append({
+                "name": if_name,
+                "description": desc,
+                "ip": ip,
+                "guid": if_name
+            })
+
+        # Sort: interfaces with non-loopback IP first, then loopback, then others
+        interfaces.sort(key=lambda i: (0 if i["ip"] and i["ip"] != "127.0.0.1" else (1 if i["ip"] else 2), i["name"]))
+        if interfaces:
+            return {"interfaces": interfaces}
+    except Exception:
+        pass
+
+    return {"interfaces": [
+        {"name": "en0", "description": "en0 (Wi-Fi / Primary Interface) — 192.0.0.2", "ip": "192.0.0.2", "guid": "en0"},
+        {"name": "lo0", "description": "lo0 (Local Loopback Interface) — 127.0.0.1", "ip": "127.0.0.1", "guid": "lo0"},
+    ]}
 
 
 @router.post("/tools/live-capture", response_model=AnalyzeResponse)
@@ -389,28 +426,43 @@ async def start_live_capture(req: LiveCaptureRequest):
     import asyncio
     from core.live import LiveMonitor
     import uuid
-    
+    from pathlib import Path
+
     monitor = LiveMonitor(req.interface, req.use_ml, 2.0, req.max_sessions)
-    
+
     try:
-        await asyncio.to_thread(monitor.start, req.duration)
+        if req.simulation:
+            sample_pcap = str(Path(__file__).resolve().parents[3] / "deps" / "sample_traffic.pcap")
+            await asyncio.to_thread(monitor.start_simulation, sample_pcap, req.duration)
+        else:
+            await asyncio.to_thread(monitor.start, req.duration)
     except Exception as e:
-        if "TShark not found" in str(e):
-            raise HTTPException(status_code=503, detail="Wireshark/tshark is not installed or not in your system PATH. Please install Wireshark to use the Live Sniffer.")
         raise HTTPException(status_code=500, detail=str(e))
-    
+
     sessions = list(monitor.seen_sessions.values())
-    
     job_id = uuid.uuid4().hex[:12]
     _jobs[job_id] = {"sessions": sessions, "pcap": "live_capture"}
-    
+
+    overall = _overall_stats(sessions)
+    try:
+        from core.history import save_scan
+        save_scan(
+            job_id=job_id,
+            target_name=f"Live Sniffer ({req.interface})",
+            scan_type="live",
+            sessions=sessions,
+            overall=overall,
+        )
+    except Exception:
+        pass
+
     return AnalyzeResponse(
         status="ok",
         message=f"Captured {len(sessions)} live sessions",
         job_id=job_id,
         pcap_filename="live_capture",
         session_count=len(sessions),
-        overall=_overall_stats(sessions),
+        overall=overall,
     )
 
 
@@ -476,12 +528,22 @@ async def live_websocket_endpoint(websocket: WebSocket):
                 use_ml = bool(msg.get("use_ml", True))
                 simulation = bool(msg.get("simulation", False))
                 max_sessions = int(msg.get("max_sessions", 0))
+                protocol_filter = msg.get("protocol_filter", "all")
+
+                bpf = None
+                if protocol_filter == "smtp":
+                    bpf = "tcp and (port 25 or port 465 or port 587)"
+                elif protocol_filter == "imap":
+                    bpf = "tcp and (port 143 or port 993)"
+                elif protocol_filter == "pop3":
+                    bpf = "tcp and (port 110 or port 995)"
 
                 active_monitor = LiveMonitor(
                     interface=interface,
                     use_ml=use_ml,
                     analysis_interval=1.0,
                     max_sessions=max_sessions,
+                    bpf_filter=bpf,
                     on_packet=on_packet_callback,
                     on_session=on_session_callback,
                     on_status=on_status_callback,
@@ -507,6 +569,17 @@ async def live_websocket_endpoint(websocket: WebSocket):
                             "pcap": "live_simulation" if simulation else "live_capture"
                         }
                         overall = _overall_stats(sessions)
+                        try:
+                            from core.history import save_scan
+                            save_scan(
+                                job_id=job_id,
+                                target_name=f"Live Sniffer ({interface})",
+                                scan_type="live",
+                                sessions=sessions,
+                                overall=overall,
+                            )
+                        except Exception:
+                            pass
                         overall_dict = overall.model_dump() if hasattr(overall, "model_dump") else overall.dict()
                         loop.call_soon_threadsafe(
                             event_queue.put_nowait,
@@ -623,9 +696,72 @@ async def evaluate_ml():
 async def train_ml(req: MLTrainRequest):
     import asyncio
     from ml.models import train_models
-    
-    res = await asyncio.to_thread(train_models, req.n_per_class, req.baseline_n)
+
+    sessions = None
+    source_name = req.source or "synthetic"
+
+    if req.source == "active_sessions":
+        if req.job_id and req.job_id in _jobs:
+            sessions = _jobs[req.job_id].get("sessions", [])
+        elif _jobs:
+            latest_job_id = list(_jobs.keys())[-1]
+            sessions = _jobs[latest_job_id].get("sessions", [])
+        if not sessions:
+            raise HTTPException(status_code=400, detail="No active inspected sessions found in memory. Please run an analysis scan or live capture first.")
+        source_name = f"Active SOC Sessions ({len(sessions)} inspected)"
+
+    elif req.source == "history":
+        from core.history import get_history, get_scan
+        history_items = get_history(limit=25)
+        sessions = []
+        for item in history_items:
+            scan_detail = get_scan(item["id"])
+            if scan_detail and "sessions" in scan_detail:
+                sessions.extend(scan_detail["sessions"])
+        if not sessions:
+            raise HTTPException(status_code=400, detail="No historical scans found in SQLite database. Please run an analysis scan first.")
+        source_name = f"Historical Scans Archive ({len(sessions)} sessions)"
+
+    res = await asyncio.to_thread(
+        train_models,
+        n_per_class=req.n_per_class,
+        baseline_n=req.baseline_n,
+        sessions=sessions,
+        source_name=source_name,
+    )
     return {"status": "ok", "details": res}
+
+
+@router.post("/tools/ml/train-upload")
+async def train_ml_upload(file: UploadFile = File(...), n_per_class: int = 500, baseline_n: int = 1500):
+    """Retrain ML models using an uploaded enterprise baseline CSV file."""
+    import asyncio
+    import tempfile
+    from ml.models import train_models
+
+    if not (file.filename or "").endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .csv file.")
+
+    content = await file.read()
+    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        res = await asyncio.to_thread(
+            train_models,
+            n_per_class=n_per_class,
+            baseline_n=baseline_n,
+            csv_path=tmp_path,
+            source_name=f"Uploaded CSV ({file.filename})",
+        )
+        return {"status": "ok", "details": res, "filename": file.filename}
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
 
 @router.get("/tools/system/diagnostics")
 async def get_diagnostics():
@@ -767,4 +903,144 @@ async def test_webhook(req: WebhookTestRequest):
         payload=res.get("payload", {}),
         error=res.get("error"),
     )
+
+
+# --- Standout Features Endpoints ---
+
+@router.post("/tools/domain-probe")
+async def domain_probe_endpoint(req: DomainProbeRequest):
+    """Actively probe target domain MX servers live (STARTTLS, TLS cipher, cert, MTA-STS, DANE) + Email Auth."""
+    clean_domain = req.domain.strip().lower().replace("https://", "").replace("http://", "").split("/")[0]
+    if not clean_domain:
+        raise HTTPException(400, "Invalid domain specified")
+
+    session, email_auth_data = await asyncio.to_thread(probe_domain, clean_domain, req.timeout, req.use_ml)
+    sessions = [session]
+    job_id = uuid.uuid4().hex[:12]
+    overall = _overall_stats(sessions)
+    _jobs[job_id] = {
+        "sessions": sessions,
+        "pcap": f"domain_probe:{clean_domain}",
+        "target_name": clean_domain,
+        "email_auth": email_auth_data,
+    }
+
+    try:
+        save_scan(job_id, clean_domain, "domain", sessions, overall=overall, email_auth=email_auth_data)
+    except Exception:
+        pass
+
+    overall_dict = overall.model_dump() if hasattr(overall, "model_dump") else overall.dict()
+    return {
+        "status": "ok",
+        "message": f"Successfully probed MX servers and email authentication for {clean_domain}",
+        "job_id": job_id,
+        "domain": clean_domain,
+        "session_count": 1,
+        "overall": overall_dict,
+        "email_auth": email_auth_data,
+    }
+
+
+@router.get("/tools/email-auth")
+async def get_email_auth_endpoint(domain: str):
+    """Query and validate SPF, DMARC, DKIM, and BIMI DNS records for any domain."""
+    clean_domain = domain.strip().lower().replace("https://", "").replace("http://", "").split("/")[0]
+    if not clean_domain:
+        raise HTTPException(400, "Invalid domain specified")
+    return evaluate_email_auth(clean_domain)
+
+
+@router.get("/jobs/{job_id}/executive-summary", response_model=ExecutiveSummaryModel)
+async def get_executive_summary_endpoint(job_id: str):
+    """Generate plain-English CISO executive risk briefing and 3-phase remediation roadmap."""
+    job = _jobs.get(job_id)
+    if not job:
+        hist = get_scan(job_id)
+        if not hist:
+            raise HTTPException(404, "Job not found in active jobs or history database")
+        # Build summary using historical data
+        p = hist.get("payload", {})
+        sessions = []
+        target_name = p.get("target_name", "Assessment Target")
+    else:
+        sessions = job.get("sessions", [])
+        target_name = job.get("target_name", "Assessment Target")
+
+    summary = generate_executive_summary(sessions, job_id, target_name=target_name)
+    return summary
+
+
+@router.get("/jobs/{job_id}/playbook/json")
+async def get_playbook_json_endpoint(job_id: str):
+    """Generate structured multi-daemon remediation playbook (Postfix, Dovecot, Exim, Sendmail)."""
+    job = _jobs.get(job_id)
+    if not job or not job.get("sessions"):
+        raise HTTPException(404, "Job sessions not found in active memory")
+    target_name = job.get("target_name", "Mail Infrastructure")
+    return generate_playbook_data(job["sessions"], target_name=target_name, job_id=job_id)
+
+
+@router.get("/jobs/{job_id}/playbook/pdf")
+async def get_playbook_pdf_endpoint(job_id: str):
+    """Generate and stream professional multi-page remediation playbook PDF."""
+    job = _jobs.get(job_id)
+    if not job or not job.get("sessions"):
+        raise HTTPException(404, "Job sessions not found in active memory")
+    target_name = job.get("target_name", "Mail Infrastructure")
+    tmp = tempfile.mkdtemp()
+    out_pdf = os.path.join(tmp, f"remediation_playbook_{job_id}.pdf")
+    try:
+        generate_playbook_pdf(job["sessions"], target_name=target_name, job_id=job_id, output_path=out_pdf)
+    except Exception as e:
+        raise HTTPException(500, f"Failed to generate Remediation Playbook PDF: {e}")
+    from fastapi.responses import FileResponse
+    return FileResponse(out_pdf, filename=f"remediation_playbook_{job_id}.pdf", media_type="application/pdf")
+
+
+@router.get("/history", response_model=List[HistoricalScanSummary])
+async def list_history_endpoint(limit: int = 50):
+    """Retrieve list of historical scans ordered by timestamp descending."""
+    return get_history(limit=limit)
+
+
+@router.get("/history/trends", response_model=HistoryTrendsResponse)
+async def get_history_trends_endpoint():
+    """Retrieve chronological posture trend data points and aggregate statistics for charting."""
+    return get_trends()
+
+
+@router.get("/history/{job_id}")
+async def get_history_scan_endpoint(job_id: str):
+    """Retrieve full historical scan details and reload scan into active session cache."""
+    scan = get_scan(job_id)
+    if not scan:
+        raise HTTPException(404, "Historical scan not found")
+    if job_id not in _jobs and scan.get("payload"):
+        p = scan["payload"]
+        _jobs[job_id] = {
+            "sessions": [],
+            "pcap": p.get("target_name", "historical"),
+            "target_name": p.get("target_name", "historical"),
+            "email_auth": p.get("email_auth"),
+        }
+    return scan
+
+
+@router.delete("/history/{job_id}")
+async def delete_history_scan_endpoint(job_id: str):
+    """Delete a historical scan record by job ID."""
+    ok = delete_scan(job_id)
+    if not ok:
+        raise HTTPException(404, "Scan not found")
+    if job_id in _jobs:
+        del _jobs[job_id]
+    return {"status": "ok", "deleted": job_id}
+
+
+@router.post("/history/clear")
+async def clear_history_endpoint():
+    """Clear all historical scans."""
+    clear_history()
+    return {"status": "ok", "message": "History cleared"}
 

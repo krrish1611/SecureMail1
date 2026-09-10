@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 
 import numpy as np
 import pandas as pd
@@ -66,25 +66,49 @@ def _save_model(model, filename: str):
 
 
 def train_models(n_per_class: int = 500, baseline_n: int = 1500,
-                 csv_path: Optional[str] = None, seed: int = 7) -> Dict:
+                 csv_path: Optional[str] = None, sessions: Optional[List[Any]] = None,
+                 source_name: str = "synthetic", seed: int = 7) -> Dict:
     """Train both ML models and persist them to MODEL_DIR.
 
-    Trains on realistic labelled data (or a user-supplied CSV) for the risk
-    classifier, and on a normal-traffic baseline for the anomaly detector.
+    Trains on realistic labelled data, user-supplied CSV, or inspected SOC sessions
+    for the risk classifier, and on normal-traffic baseline for the anomaly detector.
     """
+    from ml.training_data import (
+        generate_classified, generate_baseline, load_from_csv, extract_baseline_from_sessions
+    )
+
     if csv_path:
         X, y = load_from_csv(csv_path)
         if y is None:
             # No labels provided: train a generic classifier from realistic data
             # so that predict/predict_proba still work.
             Xb, yb = generate_classified(n_per_class=n_per_class, seed=seed)
-            # Use synthetic labels directly since unlabelled CSV has no ground-truth labels
             y = yb
             X = np.vstack([X, Xb])
+        baseline = generate_baseline(n=baseline_n, seed=seed)
+        source = "csv"
+    elif sessions:
+        Xs, ys, X_base = extract_baseline_from_sessions(sessions)
+        # Augment with anchor synthetic distributions so all risk classes are covered
+        anchor_n = max(50, n_per_class // 4)
+        Xb, yb = generate_classified(n_per_class=anchor_n, seed=seed)
+        if len(Xs) > 0:
+            X = np.vstack([Xb, Xs])
+            y = np.concatenate([yb, ys])
+        else:
+            X, y = Xb, yb
+
+        # Combine empirical normal baseline with synthetic baseline
+        base_synth = generate_baseline(n=baseline_n, seed=seed)
+        if len(X_base) > 0:
+            baseline = np.vstack([base_synth, X_base])
+        else:
+            baseline = base_synth
+        source = source_name or "sessions"
     else:
         X, y = generate_classified(n_per_class=n_per_class, seed=seed)
-
-    baseline = generate_baseline(n=baseline_n, seed=seed)
+        baseline = generate_baseline(n=baseline_n, seed=seed)
+        source = "synthetic"
 
     clf = RiskClassifier()
     clf.train(X, y)
@@ -98,11 +122,13 @@ def train_models(n_per_class: int = 500, baseline_n: int = 1500,
     import json
     metadata = {
         "trained_at": datetime.datetime.utcnow().isoformat() + "Z",
-        "source": "csv" if csv_path else "synthetic",
+        "source": source,
         "n_per_class": n_per_class,
         "baseline_n": baseline_n,
         "classifier_sample_count": len(X),
         "baseline_sample_count": len(baseline),
+        "class_distribution": {str(int(k)): int(v) for k, v in
+                               zip(*np.unique(y, return_counts=True))},
     }
     with open(os.path.join(MODEL_DIR, "metadata.json"), "w") as f:
         json.dump(metadata, f, indent=2)
@@ -110,6 +136,7 @@ def train_models(n_per_class: int = 500, baseline_n: int = 1500,
     return {
         "classifier": len(X),
         "baseline": len(baseline),
+        "source": source,
         "class_distribution": {str(int(k)): int(v) for k, v in
                                zip(*np.unique(y, return_counts=True))},
         "saved_to": MODEL_DIR,

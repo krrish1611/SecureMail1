@@ -23,3 +23,7 @@ frontend/dist/
 
 # OS
 .DS_Store
+
+# Output & Databases
+output/
+*.db

@@ -173,3 +173,21 @@ def test_websocket_stop_control():
                 break
 
         assert "completed" in received_types
+
+
+def test_live_monitor_resilient_start():
+    """Verify monitor gracefully handles non-root environments without crashing."""
+    statuses = []
+    monitor = LiveMonitor(
+        interface="lo0",
+        use_ml=False,
+        analysis_interval=0.2,
+        on_status=lambda st, d: statuses.append((st, d))
+    )
+    # Run for 0.5 seconds
+    monitor.start(duration=0.5)
+    assert monitor._stop_requested is True
+    status_names = [s[0] for s in statuses]
+    assert "started" in status_names
+    assert "completed" in status_names
+

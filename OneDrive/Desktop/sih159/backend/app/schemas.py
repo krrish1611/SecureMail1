@@ -224,3 +224,68 @@ class ComplianceReportModel(BaseModel):
     controls_summary: List[ControlSummaryModel] = []
     per_session: Dict[str, List[ComplianceCheckModel]] = {}
 
+
+class DomainProbeRequest(BaseModel):
+    domain: str
+    use_ml: bool = True
+    timeout: float = 6.0
+
+
+class EmailAuthDetails(BaseModel):
+    domain: str
+    overall_score: float = 0.0
+    grade: str = "N/A"
+    grade_color: str = "#767270"
+    summary: str = ""
+    spf: Dict[str, Any] = {}
+    dmarc: Dict[str, Any] = {}
+    dkim: Dict[str, Any] = {}
+    bimi: Dict[str, Any] = {}
+    findings: List[Dict[str, Any]] = []
+    recommendations: List[str] = []
+
+
+class ExecutiveSummaryModel(BaseModel):
+    job_id: str
+    target_name: str
+    posture_grade: str
+    grade_color: str
+    posture_score: float
+    headline: str
+    executive_brief: str
+    summary_paragraphs: List[str] = []
+    severity_counts: Dict[str, int] = {}
+    encrypted_ratio: float = 0.0
+    plaintext_sessions: int = 0
+    credentials_leaked: int = 0
+    downgrade_attacks: int = 0
+    top_vulnerabilities: List[Dict[str, Any]] = []
+    post_quantum_assessment: Dict[str, Any] = {}
+    compliance_summary: Dict[str, Any] = {}
+    actionable_roadmap: List[Dict[str, Any]] = []
+
+
+class HistoricalScanSummary(BaseModel):
+    id: str
+    timestamp: str
+    target_name: str
+    scan_type: str
+    session_count: int
+    avg_posture_score: float
+    risk_label: str
+    encrypted_sessions: int
+    plaintext_sessions: int
+    critical_findings: int
+    high_findings: int
+    medium_findings: int
+    low_findings: int
+    hndl_risk: str
+    compliance_verdict: str
+
+
+class HistoryTrendsResponse(BaseModel):
+    total_scans: int = 0
+    overall_avg_score: float = 0.0
+    total_critical_detected: int = 0
+    points: List[Dict[str, Any]] = []
+
