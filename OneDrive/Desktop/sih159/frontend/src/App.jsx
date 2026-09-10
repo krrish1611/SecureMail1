@@ -51,6 +51,208 @@ function getPostureRating(score) {
   return { label: 'Critical Risk', color: '#ff595e', grade: 'F' }
 }
 
+/* ─── Animated Radial SVG Progress Ring ─── */
+function PostureRing({ score, size = 54, strokeWidth = 5 }) {
+  const rating = getPostureRating(score)
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const pct = Math.max(0, Math.min(100, score ?? 0))
+  const offset = circumference - (pct / 100) * circumference
+  const gradeSize = size < 44 ? 14 : size < 60 ? 17 : 22
+
+  return (
+    <div className="posture-ring-wrap" style={{ width: size, height: size }} title={`${rating.label} — ${score ?? '—'}/100`}>
+      <svg className="posture-ring-svg" width={size} height={size}>
+        <circle className="ring-track" cx={size / 2} cy={size / 2} r={radius} strokeWidth={strokeWidth} />
+        <circle
+          className="ring-fill"
+          cx={size / 2} cy={size / 2} r={radius}
+          strokeWidth={strokeWidth}
+          stroke={rating.color}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={{ '--ring-circumference': circumference, '--ring-offset': offset }}
+        />
+      </svg>
+      <div className="posture-ring-label">
+        <span className="posture-ring-grade" style={{ fontSize: gradeSize, color: rating.color }}>
+          {rating.grade || '?'}
+        </span>
+        {size >= 50 && <span className="posture-ring-score">{score ?? '—'}</span>}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Interactive Certificate Chain Visualizer ─── */
+function CertChainVisualizer({ certificate }) {
+  const [activeNode, setActiveNode] = useState(null)
+  if (!certificate) return null
+
+  const issuer = certificate.issuer || 'Unknown Issuer'
+  const subject = certificate.subject || 'Unknown Subject'
+  const isRootSelfSigned = certificate.self_signed
+
+  // Build chain: if self-signed → [Root/Leaf], otherwise → [Root CA, Intermediate (optional), Leaf]
+  const nodes = []
+  if (!isRootSelfSigned) {
+    // Approximate: issuer is the CA (could be root or intermediate)
+    nodes.push({
+      id: 'root',
+      label: 'Root CA',
+      cn: issuer.split(',')[0]?.replace(/^CN=/i, '') || issuer,
+      icon: '🏛️',
+      iconClass: 'root',
+    })
+    // If issuer !== subject, add intermediate inference
+    if (issuer !== subject) {
+      nodes.push({
+        id: 'intermediate',
+        label: 'Issuer CA',
+        cn: issuer.split(',')[0]?.replace(/^CN=/i, '') || issuer,
+        icon: '🔗',
+        iconClass: 'intermediate',
+        detail: certificate.public_key_algorithm || '',
+      })
+    }
+  }
+  nodes.push({
+    id: 'leaf',
+    label: isRootSelfSigned ? 'Self-Signed' : 'Leaf Cert',
+    cn: subject.split(',')[0]?.replace(/^CN=/i, '') || subject,
+    icon: '📜',
+    iconClass: 'leaf',
+    detail: [
+      certificate.public_key_algorithm,
+      certificate.key_size ? `${certificate.key_size}-bit` : '',
+    ].filter(Boolean).join(' '),
+    validity: certificate.expired
+      ? 'EXPIRED'
+      : certificate.days_to_expiry != null
+        ? `${certificate.days_to_expiry}d left`
+        : 'Valid',
+    validityColor: certificate.expired ? '#ff595e' : '#38a856',
+    sans: certificate.san_list || certificate.sans || [],
+  })
+
+  return (
+    <div className="cert-chain-container">
+      {nodes.map((node, idx) => (
+        <React.Fragment key={node.id}>
+          {idx > 0 && (
+            <div className="cert-connector">
+              <div className="cert-connector-line" />
+              <span className="cert-connector-arrow">›</span>
+            </div>
+          )}
+          <div className={`cert-node ${activeNode === node.id ? 'active' : ''}`} onClick={() => setActiveNode(activeNode === node.id ? null : node.id)}>
+            <div className="cert-node-box">
+              <div className={`cert-node-icon ${node.iconClass}`}>{node.icon}</div>
+              <div className="cert-node-label">{node.label}</div>
+              <div className="cert-node-cn">{node.cn}</div>
+              {node.detail && <div className="cert-node-detail">{node.detail}</div>}
+              {node.validity && (
+                <div className="cert-node-detail" style={{ color: node.validityColor, fontWeight: 700 }}>
+                  {node.validity}
+                </div>
+              )}
+              {node.sans && node.sans.length > 0 && activeNode === node.id && (
+                <details className="cert-san-list" open>
+                  <summary>SANs ({node.sans.length})</summary>
+                  <ul>
+                    {node.sans.slice(0, 8).map((san, i) => <li key={i}>{san}</li>)}
+                    {node.sans.length > 8 && <li style={{ color: 'var(--text-muted)' }}>+{node.sans.length - 8} more…</li>}
+                  </ul>
+                </details>
+              )}
+            </div>
+          </div>
+        </React.Fragment>
+      ))}
+    </div>
+  )
+}
+
+/* ─── Comparison View Modal ─── */
+function ComparisonView({ scans, onClose }) {
+  if (!scans || scans.length !== 2) return null
+  const [left, right] = scans
+
+  const metrics = [
+    { label: 'Posture Score', leftVal: left.avg_posture_score, rightVal: right.avg_posture_score, unit: '/100', higherBetter: true },
+    { label: 'Sessions', leftVal: left.session_count, rightVal: right.session_count, unit: '', higherBetter: null },
+    { label: 'Critical Flaws', leftVal: left.critical_findings, rightVal: right.critical_findings, unit: '', higherBetter: false },
+    { label: 'High Flaws', leftVal: left.high_findings, rightVal: right.high_findings, unit: '', higherBetter: false },
+    { label: 'Medium Flaws', leftVal: left.medium_findings, rightVal: right.medium_findings, unit: '', higherBetter: false },
+  ]
+
+  const getDelta = (l, r, higherBetter) => {
+    if (l === r) return { cls: 'same', text: '=' }
+    if (higherBetter === null) return { cls: 'same', text: l > r ? '↑' : '↓' }
+    const better = higherBetter ? r > l : r < l
+    return { cls: better ? 'better' : 'worse', text: better ? '↑' : '↓' }
+  }
+
+  return (
+    <div className="compare-modal-backdrop" onClick={onClose}>
+      <div className="compare-modal-card" onClick={e => e.stopPropagation()}>
+        <div className="compare-modal-header">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 3h5v5M8 3H3v5M3 16v5h5M21 16v5h-5M12 3v18M3 12h18" /></svg>
+            Side-by-Side Posture Comparison
+          </h2>
+          <button className="copy-mini-btn" style={{ fontSize: '16px', padding: '4px 8px' }} onClick={onClose}>✕</button>
+        </div>
+
+        <div className="compare-grid">
+          <div className="compare-column">
+            <PostureRing score={left.avg_posture_score} size={80} strokeWidth={7} />
+            <div className="compare-column-title">{left.target_name}</div>
+            <div className="compare-column-subtitle">{left.scan_type?.toUpperCase()} · {left.timestamp?.slice(0, 10)}</div>
+          </div>
+          <div className="compare-vs-divider">
+            <div className="compare-vs-badge">VS</div>
+          </div>
+          <div className="compare-column">
+            <PostureRing score={right.avg_posture_score} size={80} strokeWidth={7} />
+            <div className="compare-column-title">{right.target_name}</div>
+            <div className="compare-column-subtitle">{right.scan_type?.toUpperCase()} · {right.timestamp?.slice(0, 10)}</div>
+          </div>
+        </div>
+
+        <div className="compare-metrics-table">
+          {metrics.map(m => {
+            const delta = getDelta(m.leftVal, m.rightVal, m.higherBetter)
+            return (
+              <div key={m.label} className="compare-metric-row">
+                <div className="compare-metric-val left" style={{ color: delta.cls === 'worse' ? '#ff595e' : delta.cls === 'better' ? '#38a856' : 'var(--text-primary)' }}>
+                  {m.leftVal ?? '—'}{m.unit}
+                </div>
+                <div className={`compare-delta ${delta.cls}`}>{delta.text}</div>
+                <div className="compare-metric-label">{m.label}</div>
+                <div className={`compare-delta ${delta.cls}`}>{delta.text}</div>
+                <div className="compare-metric-val right" style={{ color: delta.cls === 'better' ? '#38a856' : delta.cls === 'worse' ? '#ff595e' : 'var(--text-primary)' }}>
+                  {m.rightVal ?? '—'}{m.unit}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div style={{ padding: '0 24px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {left.avg_posture_score > right.avg_posture_score
+              ? `⬆ "${left.target_name}" scores ${(left.avg_posture_score - right.avg_posture_score).toFixed(1)} points higher`
+              : left.avg_posture_score < right.avg_posture_score
+                ? `⬆ "${right.target_name}" scores ${(right.avg_posture_score - left.avg_posture_score).toFixed(1)} points higher`
+                : '⬌ Both scans have identical posture scores'}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   // Core Data State
   const [file, setFile] = useState(null)
@@ -141,6 +343,11 @@ export default function App() {
   const [historyScans, setHistoryScans] = useState([])
   const [historyTrends, setHistoryTrends] = useState(null)
   const [historyLoading, setHistoryLoading] = useState(false)
+
+  // Comparison Mode State
+  const [compareMode, setCompareMode] = useState(false)
+  const [compareSelections, setCompareSelections] = useState(new Set())
+  const [compareModalOpen, setCompareModalOpen] = useState(false)
 
   const fileInputRef = useRef(null)
 
@@ -308,6 +515,15 @@ export default function App() {
     const targetId = id || jobId
     if (!targetId) return
     window.open(`/api/jobs/${targetId}/playbook/pdf`, '_blank')
+  }
+
+  const downloadHardeningScript = (platform = 'linux', id = null) => {
+    const targetId = id || hardeningData?.session_id || hardeningSessionId || jobId
+    if (!targetId) {
+      alert('No active scan session available for hardening script generation.')
+      return
+    }
+    window.open(`/api/jobs/${targetId}/hardening-script?platform=${platform}`, '_blank')
   }
 
   // Analyze uploaded PCAP
@@ -1050,9 +1266,7 @@ export default function App() {
             <div className="executive-summary-card">
               <div className="exec-header-row">
                 <div className="exec-badge-group">
-                  <div className="exec-grade-pill" style={{ backgroundColor: executiveSummary.grade_color }}>
-                    {executiveSummary.posture_grade}
-                  </div>
+                  <PostureRing score={executiveSummary.posture_score} size={64} strokeWidth={6} />
                   <div>
                     <div className="exec-headline-text">{executiveSummary.headline}</div>
                     <div className="exec-target-subtext">
@@ -1079,6 +1293,24 @@ export default function App() {
                   >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
                     <span>Remediation Playbook (PDF)</span>
+                  </button>
+                  <button
+                    className="chip-btn"
+                    style={{ background: 'var(--bg-app)', border: '1px solid var(--border-color)', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 11px', fontSize: '12px' }}
+                    onClick={() => downloadHardeningScript('linux')}
+                    title="Download automated Postfix/Dovecot TLS hardening script (.sh)"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                    <span>Hardening (.sh)</span>
+                  </button>
+                  <button
+                    className="chip-btn"
+                    style={{ background: 'var(--bg-app)', border: '1px solid var(--border-color)', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 11px', fontSize: '12px' }}
+                    onClick={() => downloadHardeningScript('windows')}
+                    title="Download automated Windows SChannel TLS hardening script (.ps1)"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                    <span>Hardening (.ps1)</span>
                   </button>
                 </div>
               </div>
@@ -1719,9 +1951,7 @@ export default function App() {
                       </span>
 
 
-                      <div className="score-badge-pill" style={{ color: sessionScoreRating.color }}>
-                        <span>Posture: <b>{s.posture_score ?? '—'}</b>/100</span>
-                      </div>
+                      <PostureRing score={s.posture_score} size={42} strokeWidth={4} />
 
                       <span className="chip-btn" style={{ padding: '3px 8px', fontSize: '11px' }}>
                         {s.finding_count} {s.finding_count === 1 ? 'finding' : 'findings'}
@@ -1884,6 +2114,11 @@ export default function App() {
                                           ? `Expires in ${detail.certificate.days_to_expiry} days`
                                           : 'Valid'}
                                     </span>
+                                  </div>
+                                  {/* Certificate Chain Visualizer */}
+                                  <div style={{ marginTop: '10px', borderTop: '1px dashed var(--border-color)', paddingTop: '10px' }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Certificate Trust Chain</div>
+                                    <CertChainVisualizer certificate={detail.certificate} />
                                   </div>
                                 </>
                               ) : (
@@ -3219,8 +3454,30 @@ export default function App() {
           {/* Historical Scans Table */}
           <div className="history-table-card">
             <div className="history-table-header">
-              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Assessment History ({historyScans.length})
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Assessment History ({historyScans.length})
+                </div>
+                {historyScans.length >= 2 && (
+                  <button
+                    className={`compare-toggle-btn ${compareMode ? 'active' : ''}`}
+                    onClick={() => { setCompareMode(!compareMode); setCompareSelections(new Set()); }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 3h5v5M8 3H3v5M3 16v5h5M21 16v5h-5M12 3v18M3 12h18" /></svg>
+                    {compareMode ? 'Cancel Compare' : 'Compare Mode'}
+                  </button>
+                )}
+                {compareMode && compareSelections.size === 2 && (
+                  <button
+                    className="compare-launch-btn"
+                    onClick={() => setCompareModalOpen(true)}
+                  >
+                    Compare Selected ({compareSelections.size})
+                  </button>
+                )}
+                {compareMode && compareSelections.size > 0 && compareSelections.size < 2 && (
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Select 1 more scan to compare</span>
+                )}
               </div>
               {historyScans.length > 0 && (
                 <button
@@ -3237,6 +3494,7 @@ export default function App() {
                 <table className="history-table">
                   <thead>
                     <tr>
+                      {compareMode && <th style={{ width: '40px' }}></th>}
                       <th>Target</th>
                       <th>Type</th>
                       <th>Date</th>
@@ -3250,6 +3508,25 @@ export default function App() {
                   <tbody>
                     {historyScans.map((s) => (
                       <tr key={s.id}>
+                        {compareMode && (
+                          <td>
+                            <input
+                              type="checkbox"
+                              className="compare-checkbox"
+                              checked={compareSelections.has(s.id)}
+                              onChange={() => {
+                                const next = new Set(compareSelections)
+                                if (next.has(s.id)) {
+                                  next.delete(s.id)
+                                } else if (next.size < 2) {
+                                  next.add(s.id)
+                                }
+                                setCompareSelections(next)
+                              }}
+                              disabled={!compareSelections.has(s.id) && compareSelections.size >= 2}
+                            />
+                          </td>
+                        )}
                         <td>
                           <b>{s.target_name}</b>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{s.id}</div>
@@ -3443,6 +3720,29 @@ export default function App() {
                   )
                 })()}
 
+                {/* One-Click Hardening Script Download */}
+                <div className="hardening-script-download-row">
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginRight: '8px' }}>
+                    Download automated hardening script:
+                  </span>
+                  <button
+                    className="hardening-script-btn linux"
+                    onClick={() => downloadHardeningScript('linux')}
+                    title="Download Bash script (.sh) for Postfix/Dovecot/Exim hardening on Linux"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                    Hardening Script (.sh)
+                  </button>
+                  <button
+                    className="hardening-script-btn windows"
+                    onClick={() => downloadHardeningScript('windows')}
+                    title="Download PowerShell script (.ps1) for Windows Server hardening"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                    Hardening Script (.ps1)
+                  </button>
+                </div>
+
                 {/* Remediation Playbook PDF Action inside Modal */}
                 <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -3582,6 +3882,14 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Comparison Modal */}
+      {compareModalOpen && (
+        <ComparisonView
+          scans={historyScans.filter(s => compareSelections.has(s.id))}
+          onClose={() => setCompareModalOpen(false)}
+        />
       )}
 
       {/* Footer */}

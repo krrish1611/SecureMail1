@@ -25,12 +25,14 @@ except ImportError:
 
 
 def _get_resolver() -> Any:
-    """Create a configured DNS resolver with reasonable timeouts."""
+    """Create a configured DNS resolver with fast, reliable public resolvers and reasonable timeouts."""
     if not HAS_DNS:
         return None
-    res = dns.resolver.Resolver()
-    res.timeout = 3.0
-    res.lifetime = 4.0
+    res = dns.resolver.Resolver(configure=True)
+    # Ensure fast fallback servers to avoid Windows inactive adapter delays
+    res.nameservers = ["1.1.1.1", "8.8.8.8"] + [ns for ns in res.nameservers if ns not in ("1.1.1.1", "8.8.8.8")]
+    res.timeout = 2.0
+    res.lifetime = 3.0
     return res
 
 

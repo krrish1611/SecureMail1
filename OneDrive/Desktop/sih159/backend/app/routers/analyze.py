@@ -11,7 +11,7 @@ import uuid
 import re
 from typing import List
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect, Response
 from core.capture import reassemble
 from core.analyzer import analyze_all
 from core.live import LiveMonitor
@@ -19,7 +19,11 @@ from core.models import Session, Finding, Severity, SEVERITY_NAMES
 from core.compliance import evaluate_compliance_all, compliance_report_to_dict
 from ml.models import MLPostureScorer, rule_based_posture_score
 from reports.exporters import generate_json, generate_html, generate_pdf, generate_csv
-from reports.hardening import generate_hardening_package
+from reports.hardening import (
+    generate_hardening_package,
+    generate_hardening_script_sh,
+    generate_hardening_script_ps1,
+)
 from core.alerting import WebhookDispatcher
 from core.domain_probe import probe_domain
 from core.email_auth import evaluate_email_auth
@@ -860,6 +864,57 @@ async def get_session_hardening(session_id: str):
             )
             for k, v in pkg.snippets.items()
         },
+    )
+
+
+def _resolve_hardening_session(target_id: str):
+    """Find session or fallback dummy session for job_id or session_id."""
+    for job in _jobs.values():
+        for s in job.get("sessions", []):
+            if s.id == target_id:
+                return s, job.get("target_name") or s.server_ip or "Mail Infrastructure"
+
+    job = _jobs.get(target_id)
+    if job and job.get("sessions"):
+        sessions = sorted(job["sessions"], key=lambda s: s.posture_score if s.posture_score is not None else 100)
+        return sessions[0], job.get("target_name") or "Mail Infrastructure"
+
+    scan = get_scan(target_id)
+    if scan:
+        target_name = scan.get("target_name") or "Mail Infrastructure"
+        dummy = Session(
+            id=target_id,
+            protocol=scan.get("scan_type", "smtp"),
+            server_ip=scan.get("server_ip", "127.0.0.1"),
+        )
+        return dummy, target_name
+    return None, None
+
+
+@router.get("/jobs/{job_id}/hardening-script")
+@router.get("/sessions/{job_id}/hardening-script")
+async def get_hardening_script_endpoint(job_id: str, platform: str = "linux"):
+    """Generate downloadable automated shell script (.sh for Linux or .ps1 for Windows) applying TLS hardening."""
+    session, target_name = _resolve_hardening_session(job_id)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Target {job_id} not found in active jobs or history")
+
+    pkg = generate_hardening_package(session)
+    clean_target = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', target_name or session.id)
+
+    if platform.lower() == "windows":
+        script_content = generate_hardening_script_ps1(pkg, target_name=target_name)
+        filename = f"hardening_{clean_target}.ps1"
+        media_type = "text/plain; charset=utf-8"
+    else:
+        script_content = generate_hardening_script_sh(pkg, target_name=target_name)
+        filename = f"hardening_{clean_target}.sh"
+        media_type = "application/x-sh; charset=utf-8"
+
+    return Response(
+        content=script_content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

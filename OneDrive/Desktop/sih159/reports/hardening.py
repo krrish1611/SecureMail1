@@ -240,3 +240,256 @@ def generate_hardening_package(session: Session) -> HardeningPackage:
     )
 
     return package
+
+
+def generate_hardening_script_sh(package: HardeningPackage, target_name: str = "") -> str:
+    """Generate an automated executable Bash script (.sh) applying Postfix and Dovecot TLS hardening."""
+    target = target_name or package.domain or package.server_ip or "Mail Infrastructure"
+    session_id = package.session_id
+
+    template = """#!/usr/bin/env bash
+# ==============================================================================
+# SecureMailScope - Automated Cryptographic Hardening Script
+# Target: __TARGET__
+# Generated for: __SESSION_ID__
+# Standards: NIST SP 800-52r2 | PCI-DSS 4.0 | RFC 7672 (DANE) | RFC 8461 (MTA-STS)
+# ==============================================================================
+
+set -euo pipefail
+
+RED='\\033[0;31m'
+GREEN='\\033[0;32m'
+YELLOW='\\033[1;33m'
+CYAN='\\033[0;36m'
+NC='\\033[0m'
+
+echo -e "${CYAN}================================================================${NC}"
+echo -e "${CYAN} SecureMailScope Automated Cryptographic Hardening Script${NC}"
+echo -e "${CYAN} Target: __TARGET__${NC}"
+echo -e "${CYAN}================================================================${NC}"
+
+# Ensure root privileges
+if [ "$EUID" -ne 0 ]; then
+  echo -e "${RED}[-] ERROR: This script must be run as root or with sudo.${NC}" >&2
+  exit 1
+fi
+
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/var/backups/securemailscope_${TIMESTAMP}"
+mkdir -p "${BACKUP_DIR}"
+echo -e "${GREEN}[+] Configuration backup directory created: ${BACKUP_DIR}${NC}"
+
+# ------------------------------------------------------------------------------
+# 1. POSTFIX HARDENING (/etc/postfix/main.cf)
+# ------------------------------------------------------------------------------
+if command -v postconf >/dev/null 2>&1 && [ -d "/etc/postfix" ]; then
+    echo -e "${YELLOW}[+] Applying Postfix TLS hardening...${NC}"
+    if [ -f "/etc/postfix/main.cf" ]; then
+        cp /etc/postfix/main.cf "${BACKUP_DIR}/postfix_main.cf.bak"
+        echo "    [i] Backup saved to ${BACKUP_DIR}/postfix_main.cf.bak"
+    fi
+
+    # Enforce TLS 1.2+ minimum
+    postconf -e "smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1"
+    postconf -e "smtpd_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1"
+    postconf -e "smtp_tls_mandatory_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1"
+    postconf -e "smtp_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1"
+
+    # Enforce High AEAD Cipher Suites & Exclude Weak Algorithms
+    postconf -e "smtpd_tls_mandatory_ciphers = high"
+    postconf -e "smtpd_tls_ciphers = high"
+    postconf -e "smtpd_tls_exclude_ciphers = aNULL, eNULL, EXPORT, DES, 3DES, RC4, MD5, PSK, aECDH, EDH-DSS-DES-CBC3-SHA, EDH-RSA-DES-CBC3-SHA, KRB5-DES, CBC"
+    postconf -e "tls_high_cipherlist = ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305"
+
+    # Strict STARTTLS & Credentials Protection
+    postconf -e "smtpd_tls_security_level = encrypt"
+    postconf -e "smtpd_tls_auth_only = yes"
+
+    # DANE & DNSSEC Resolution
+    postconf -e "smtp_dns_support_level = dnssec"
+    postconf -e "smtp_tls_security_level = dane"
+    postconf -e "smtp_tls_loglevel = 1"
+
+    # Elliptic Curves & Forward Secrecy
+    postconf -e "smtpd_tls_eecdh_grade = ultra"
+    postconf -e "tls_eecdh_strong_curve = prime256v1"
+    postconf -e "tls_eecdh_ultra_curve = secp384r1"
+
+    echo "    [+] Validating Postfix configuration..."
+    if postfix check; then
+        echo "    [+] Syntax OK. Reloading Postfix service..."
+        if systemctl is-active --quiet postfix 2>/dev/null; then
+            systemctl reload postfix || systemctl restart postfix
+        fi
+        echo -e "${GREEN}[✓] Postfix TLS hardening applied successfully.${NC}"
+    else
+        echo -e "${RED}[-] Postfix syntax check failed! Restoring backup...${NC}"
+        cp "${BACKUP_DIR}/postfix_main.cf.bak" /etc/postfix/main.cf
+    fi
+else
+    echo -e "${YELLOW}[i] Postfix not detected or not installed. Skipping.${NC}"
+fi
+
+# ------------------------------------------------------------------------------
+# 2. DOVECOT HARDENING (/etc/dovecot/conf.d/10-ssl.conf)
+# ------------------------------------------------------------------------------
+DOVECOT_CONF="/etc/dovecot/conf.d/10-ssl.conf"
+if [ -d "/etc/dovecot" ]; then
+    echo -e "${YELLOW}[+] Applying Dovecot TLS hardening...${NC}"
+    if [ -f "$DOVECOT_CONF" ]; then
+        cp "$DOVECOT_CONF" "${BACKUP_DIR}/dovecot_10-ssl.conf.bak"
+        echo "    [i] Backup saved to ${BACKUP_DIR}/dovecot_10-ssl.conf.bak"
+
+        # Ensure SSL is mandatory
+        sed -i 's/^#*ssl =.*/ssl = required/' "$DOVECOT_CONF"
+        sed -i 's/^#*disable_plaintext_auth =.*/disable_plaintext_auth = yes/' "$DOVECOT_CONF"
+
+        # Enforce TLS 1.2+ minimum
+        if grep -q "ssl_min_protocol" "$DOVECOT_CONF"; then
+            sed -i 's/^#*ssl_min_protocol =.*/ssl_min_protocol = TLSv1.2/' "$DOVECOT_CONF"
+        else
+            echo "ssl_min_protocol = TLSv1.2" >> "$DOVECOT_CONF"
+        fi
+
+        # High-security AEAD Cipher suites
+        CIPHERS='ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305'
+        if grep -q "ssl_cipher_list" "$DOVECOT_CONF"; then
+            sed -i "s|^#*ssl_cipher_list =.*|ssl_cipher_list = $CIPHERS|" "$DOVECOT_CONF"
+        else
+            echo "ssl_cipher_list = $CIPHERS" >> "$DOVECOT_CONF"
+        fi
+
+        # Prefer server ciphers
+        if grep -q "ssl_prefer_server_ciphers" "$DOVECOT_CONF"; then
+            sed -i 's/^#*ssl_prefer_server_ciphers =.*/ssl_prefer_server_ciphers = yes/' "$DOVECOT_CONF"
+        else
+            echo "ssl_prefer_server_ciphers = yes" >> "$DOVECOT_CONF"
+        fi
+
+        if command -v doveadm >/dev/null 2>&1; then
+            echo "    [+] Validating Dovecot configuration..."
+            doveadm reload || systemctl restart dovecot
+        elif systemctl is-active --quiet dovecot 2>/dev/null; then
+            systemctl reload dovecot || systemctl restart dovecot
+        fi
+        echo -e "${GREEN}[✓] Dovecot TLS hardening applied successfully.${NC}"
+    else
+        echo -e "${YELLOW}[i] Dovecot SSL config file not found at $DOVECOT_CONF. Skipping.${NC}"
+    fi
+else
+    echo -e "${YELLOW}[i] Dovecot not detected or not installed. Skipping.${NC}"
+fi
+
+echo -e "${CYAN}================================================================${NC}"
+echo -e "${GREEN}[✓] SecureMailScope Cryptographic Hardening Finished!${NC}"
+echo -e "${CYAN}    Backups preserved in: ${BACKUP_DIR}${NC}"
+echo -e "${CYAN}================================================================${NC}"
+"""
+    return template.replace("__TARGET__", target).replace("__SESSION_ID__", session_id)
+
+
+def generate_hardening_script_ps1(package: HardeningPackage, target_name: str = "") -> str:
+    """Generate an automated PowerShell script (.ps1) for Windows Server TLS SChannel hardening."""
+    target = target_name or package.domain or package.server_ip or "Mail Infrastructure"
+    session_id = package.session_id
+
+    template = """<#
+.SYNOPSIS
+    SecureMailScope Automated Cryptographic Hardening Script for Windows Server / SChannel
+.DESCRIPTION
+    Hardens Windows TLS stack (SChannel registry) for Mail Servers (Exchange / hMailServer / IIS SMTP).
+    - Disables SSLv2, SSLv3, TLS 1.0, TLS 1.1
+    - Enforces TLS 1.2 and TLS 1.3
+    - Disables weak/broken ciphers (RC4, 3DES, DES, NULL)
+    - Prioritizes modern AEAD forward-secret cipher suites
+    Target: __TARGET__
+    Session ID: __SESSION_ID__
+#>
+
+[CmdletBinding()]
+Param()
+
+# Ensure elevated Administrator privileges
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    Write-Error "[-] ERROR: This script must be run in an elevated PowerShell session (Run as Administrator)."
+    exit 1
+}
+
+Write-Host "================================================================" -ForegroundColor Cyan
+Write-Host " SecureMailScope Windows SChannel / Mail TLS Hardening" -ForegroundColor Cyan
+Write-Host " Target: __TARGET__" -ForegroundColor Cyan
+Write-Host "================================================================" -ForegroundColor Cyan
+
+$schannelProtocolsPath = "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\SCHANNEL\\Protocols"
+
+# 1. Protocols to Disable (SSL 2.0, SSL 3.0, TLS 1.0, TLS 1.1)
+$legacyProtocols = @("SSL 2.0", "SSL 3.0", "TLS 1.0", "TLS 1.1")
+foreach ($proto in $legacyProtocols) {
+    Write-Host "[-] Disabling legacy protocol: $proto" -ForegroundColor Yellow
+    $serverPath = "$schannelProtocolsPath\\$proto\\Server"
+    $clientPath = "$schannelProtocolsPath\\$proto\\Client"
+    
+    if (-not (Test-Path $serverPath)) { New-Item -Path $serverPath -Force | Out-Null }
+    Set-ItemProperty -Path $serverPath -Name "Enabled" -Value 0 -Type DWord
+    Set-ItemProperty -Path $serverPath -Name "DisabledByDefault" -Value 1 -Type DWord
+    
+    if (-not (Test-Path $clientPath)) { New-Item -Path $clientPath -Force | Out-Null }
+    Set-ItemProperty -Path $clientPath -Name "Enabled" -Value 0 -Type DWord
+    Set-ItemProperty -Path $clientPath -Name "DisabledByDefault" -Value 1 -Type DWord
+}
+
+# 2. Protocols to Enable (TLS 1.2, TLS 1.3)
+$modernProtocols = @("TLS 1.2", "TLS 1.3")
+foreach ($proto in $modernProtocols) {
+    Write-Host "[+] Enabling secure protocol: $proto" -ForegroundColor Green
+    $serverPath = "$schannelProtocolsPath\\$proto\\Server"
+    $clientPath = "$schannelProtocolsPath\\$proto\\Client"
+    
+    if (-not (Test-Path $serverPath)) { New-Item -Path $serverPath -Force | Out-Null }
+    Set-ItemProperty -Path $serverPath -Name "Enabled" -Value 1 -Type DWord
+    Set-ItemProperty -Path $serverPath -Name "DisabledByDefault" -Value 0 -Type DWord
+    
+    if (-not (Test-Path $clientPath)) { New-Item -Path $clientPath -Force | Out-Null }
+    Set-ItemProperty -Path $clientPath -Name "Enabled" -Value 1 -Type DWord
+    Set-ItemProperty -Path $clientPath -Name "DisabledByDefault" -Value 0 -Type DWord
+}
+
+# 3. Disable Insecure Ciphers (RC4, 3DES, DES, NULL)
+$ciphersPath = "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\SCHANNEL\\Ciphers"
+$weakCiphers = @("RC4 40/128", "RC4 56/128", "RC4 64/128", "RC4 128/128", "Triple DES 168", "DES 56/56", "NULL")
+foreach ($c in $weakCiphers) {
+    $cPath = "$ciphersPath\\$c"
+    if (-not (Test-Path $cPath)) { New-Item -Path $cPath -Force | Out-Null }
+    Set-ItemProperty -Path $cPath -Name "Enabled" -Value 0 -Type DWord
+}
+Write-Host "[✓] Insecure ciphers disabled (RC4, 3DES, DES, NULL)." -ForegroundColor Green
+
+# 4. Cipher Suite Ordering (Prioritize AEAD suites)
+$secureCipherSuites = @(
+    "TLS_AES_256_GCM_SHA384",
+    "TLS_AES_128_GCM_SHA256",
+    "TLS_CHACHA20_POLY1305_SHA256",
+    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+)
+
+Write-Host "[+] Configuring TLS cipher suite ordering..." -ForegroundColor Green
+try {
+    foreach ($cs in $secureCipherSuites) {
+        Enable-TlsCipherSuite -Name $cs -Position 0 -ErrorAction SilentlyContinue
+    }
+    Write-Host "[✓] Prioritized AEAD cipher suites configured." -ForegroundColor Green
+} catch {
+    Write-Warning "Could not reorder TLS cipher suites via Enable-TlsCipherSuite."
+}
+
+Write-Host "================================================================" -ForegroundColor Cyan
+Write-Host " [✓] SecureMailScope Windows SChannel Hardening Complete!" -ForegroundColor Green
+Write-Host " [i] A system restart is required for changes to take full effect." -ForegroundColor Yellow
+Write-Host "================================================================" -ForegroundColor Cyan
+"""
+    return template.replace("__TARGET__", target).replace("__SESSION_ID__", session_id)
+

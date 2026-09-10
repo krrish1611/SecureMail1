@@ -43,9 +43,10 @@ def _resolve_mx_hosts(domain: str) -> List[Tuple[int, str]]:
     mx_hosts = []
     if HAS_DNS:
         try:
-            resolver = dns.resolver.Resolver()
-            resolver.timeout = 3.0
-            resolver.lifetime = 4.0
+            resolver = dns.resolver.Resolver(configure=True)
+            resolver.nameservers = ["1.1.1.1", "8.8.8.8"] + [ns for ns in resolver.nameservers if ns not in ("1.1.1.1", "8.8.8.8")]
+            resolver.timeout = 2.0
+            resolver.lifetime = 3.0
             answers = resolver.resolve(clean_domain, "MX")
             for rdata in answers:
                 priority = int(rdata.preference)
