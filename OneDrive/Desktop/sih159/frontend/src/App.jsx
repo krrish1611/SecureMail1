@@ -2758,7 +2758,7 @@ export default function App() {
               </div>
 
               {/* Start / Stop Button */}
-              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
                 {liveCapturing ? (
                   <button
                     className="btn-danger"
@@ -2769,15 +2769,36 @@ export default function App() {
                     Stop Sniffing ({captureRemaining}s)
                   </button>
                 ) : (
-                  <button
-                    className="btn-primary"
-                    onClick={startLiveSniffing}
-                    disabled={!wsConnected || (!simulationMode && !selectedInterface)}
-                    style={{ padding: '9px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                    Start Real-Time Sniffing
-                  </button>
+                  <>
+                    <button
+                      className="btn-primary"
+                      onClick={startLiveSniffing}
+                      disabled={!wsConnected || (!simulationMode && !selectedInterface)}
+                      style={{ padding: '9px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                      Start Real-Time Sniffing
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={async () => {
+                        try {
+                          await fetch('/api/tools/traffic/generate-live', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ protocol: 'smtp', port: 587, num_sessions: 3 })
+                          });
+                        } catch (err) {
+                          console.error('Failed to generate traffic:', err);
+                        }
+                      }}
+                      title="Transmit real TCP email traffic across 127.0.0.1:587"
+                      style={{ padding: '9px 14px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+                      Send Live Traffic
+                    </button>
+                  </>
                 )}
               </div>
             </div>

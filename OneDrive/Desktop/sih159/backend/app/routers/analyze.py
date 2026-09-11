@@ -614,6 +614,112 @@ async def live_websocket_endpoint(websocket: WebSocket):
             active_monitor.stop()
 
 
+@router.post("/tools/traffic/generate-live")
+async def generate_live_traffic_endpoint(
+    protocol: str = "smtp",
+    port: int = 587,
+    num_sessions: int = 3,
+):
+    """Generate real live email TCP traffic on localhost (127.0.0.1) for hardware sniffer testing."""
+    import socket
+    import threading
+    import time
+    import os
+
+    def _worker():
+        try:
+            srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                srv.bind(("127.0.0.1", port))
+            except Exception:
+                srv.bind(("127.0.0.1", 25))
+            srv.listen(5)
+            srv.settimeout(8.0)
+
+            def _handle_client(conn):
+                try:
+                    conn.sendall(b"220 mail.securemailscope.internal ESMTP Postfix (Ubuntu)\r\n")
+                    data = conn.recv(1024)
+                    if b"EHLO" in data or b"HELO" in data:
+                        conn.sendall(b"250-mail.securemailscope.internal\r\n250-PIPELINING\r\n250-SIZE 10240000\r\n250-STARTTLS\r\n250-AUTH LOGIN PLAIN\r\n250 ENHANCEDSTATUSCODES\r\n")
+                        data2 = conn.recv(1024)
+                        if b"STARTTLS" in data2:
+                            conn.sendall(b"220 2.0.0 Ready to start TLS\r\n")
+                            # Simulate TLS ClientHello record
+                            tls_data = conn.recv(4096)
+                            if tls_data and tls_data[0] == 0x16:
+                                # Send TLS ServerHello record
+                                conn.sendall(b"\x16\x03\x03\x00\x46\x02\x00\x00\x42\x03\x03" + os.urandom(32) + b"\x20" + os.urandom(32) + b"\x13\x01\x00")
+                        elif b"AUTH" in data2:
+                            conn.sendall(b"334 VXNlcm5hbWU6\r\n")
+                            conn.recv(1024)
+                            conn.sendall(b"334 UGFzc3dvcmQ6\r\n")
+                            conn.recv(1024)
+                            conn.sendall(b"235 2.7.0 Authentication successful\r\n")
+                        conn.sendall(b"221 2.0.0 Bye\r\n")
+                except Exception:
+                    pass
+                finally:
+                    conn.close()
+
+            def _client_runner():
+                time.sleep(0.3)
+                for i in range(num_sessions):
+                    try:
+                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        s.connect(("127.0.0.1", port))
+                        s.recv(1024)
+                        s.sendall(f"EHLO client-workstation-{i}.internal\r\n".encode())
+                        s.recv(1024)
+                        if i % 2 == 0:
+                            s.sendall(b"STARTTLS\r\n")
+                            s.recv(1024)
+                            client_hello = (
+                                b"\x16\x03\x01\x00\x7a\x01\x00\x00\x76\x03\x03"
+                                + os.urandom(32)
+                                + b"\x20" + os.urandom(32)
+                                + b"\x00\x04\x13\x01\x13\x02\x01\x00"
+                                + b"\x00\x29\x00\x00\x00\x1b\x00\x19\x00\x00\x16mail.securemailscope.internal"
+                            )
+                            s.sendall(client_hello)
+                            time.sleep(0.1)
+                        else:
+                            s.sendall(b"AUTH LOGIN\r\n")
+                            s.recv(1024)
+                            s.sendall(b"YWRtaW5Ac2VjdXJlbWFpbC5nb3Y=\r\n")
+                            s.recv(1024)
+                            s.sendall(b"U3VwZXJTZWNyZXRQYXNzIQ==\r\n")
+                            s.recv(1024)
+                        s.close()
+                    except Exception:
+                        pass
+                    time.sleep(0.2)
+
+            threading.Thread(target=_client_runner, daemon=True).start()
+
+            for _ in range(num_sessions):
+                try:
+                    conn, _ = srv.accept()
+                    _handle_client(conn)
+                except Exception:
+                    break
+
+            srv.close()
+        except Exception as e:
+            print(f"[Live Traffic Generator Error]: {e}")
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return {
+        "status": "transmitting",
+        "protocol": protocol,
+        "port": port,
+        "target": "127.0.0.1",
+        "num_sessions": num_sessions,
+        "message": f"Transmitting {num_sessions} live TCP email sessions on 127.0.0.1:{port}"
+    }
+
+
 @router.get("/tools/ml/status")
 async def get_ml_status():
     from ml.models import CONFIG, MODEL_DIR, FEATURE_NAMES

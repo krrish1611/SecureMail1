@@ -69,18 +69,35 @@ class LiveMonitor:
         """Signal the live monitor to terminate capture gracefully."""
         self._stop_requested = True
         if self._cap:
+            if hasattr(self._cap, "eventloop") and self._cap.eventloop:
+                try:
+                    self._cap.eventloop.call_soon_threadsafe(self._cap.eventloop.stop)
+                except Exception:
+                    pass
             if hasattr(self._cap, "_running_processes"):
                 for proc in list(self._cap._running_processes):
                     try:
                         pid = getattr(proc, "pid", None)
                         if pid and sys.platform == "win32":
                             os.system(f"taskkill /F /T /PID {pid} >nul 2>&1")
+                        elif pid:
+                            try:
+                                import signal
+                                os.kill(pid, signal.SIGKILL)
+                            except Exception:
+                                pass
                         proc.kill()
                     except Exception:
                         pass
             if sys.platform == "win32":
                 try:
                     subprocess.run(["taskkill.exe", "/F", "/IM", "tshark.exe"], capture_output=True)
+                    subprocess.run(["taskkill.exe", "/F", "/IM", "dumpcap.exe"], capture_output=True)
+                except Exception:
+                    pass
+            else:
+                try:
+                    os.system("pkill -9 dumpcap >/dev/null 2>&1; pkill -9 tshark >/dev/null 2>&1")
                 except Exception:
                     pass
             try:
@@ -352,7 +369,10 @@ class LiveMonitor:
             except Exception:
                 pass
 
+        is_loopback = str(self.interface).lower().startswith("lo") or str(self.interface).lower() in ("lo0", "127.0.0.1", "localhost")
         bpf = self.bpf_filter or "tcp and (port 25 or port 465 or port 587 or port 110 or port 995 or port 143 or port 993)"
+        # On Darwin (macOS), loopback DLT_NULL 4-byte link-layer headers misalign raw BPF offsets; filter in user space
+        kernel_bpf = None if (is_loopback and sys.platform == "darwin") else bpf
 
         def _ticker():
             while not self._stop_requested:
@@ -383,12 +403,19 @@ class LiveMonitor:
                 return
             if TCP in pkt:
                 tcp = pkt[TCP]
+                sport = int(tcp.sport)
+                dport = int(tcp.dport)
+                if is_loopback and sys.platform == "darwin":
+                    from core.capture import EMAIL_PORTS
+                    if sport not in EMAIL_PORTS and dport not in EMAIL_PORTS:
+                        return
+
                 ip_src = pkt[IP].src if IP in pkt else (pkt[IPv6].src if IPv6 in pkt else "127.0.0.1")
                 ip_dst = pkt[IP].dst if IP in pkt else (pkt[IPv6].dst if IPv6 in pkt else "127.0.0.1")
                 payload = bytes(tcp.payload)
                 ts = float(pkt.time) if hasattr(pkt, "time") else time.time()
                 flags_str = str(tcp.flags) if hasattr(tcp, "flags") else ""
-                self._feed_packet(ip_src, int(tcp.sport), ip_dst, int(tcp.dport), payload, ts, flags_str=flags_str)
+                self._feed_packet(ip_src, sport, ip_dst, dport, payload, ts, flags_str=flags_str)
 
                 nonlocal start_ts
                 now = time.time()
@@ -400,7 +427,7 @@ class LiveMonitor:
         try:
             sniff(
                 iface=self.interface if self.interface not in ("all", "any") else None,
-                filter=bpf,
+                filter=kernel_bpf,
                 prn=_scapy_callback,
                 stop_filter=lambda p: self._stop_requested,
                 timeout=duration,
@@ -530,7 +557,7 @@ class LiveMonitor:
                 pass
 
     def start(self, duration: Optional[float] = None) -> None:
-        """Run resilient live capture: Scapy Native (preferred for raw socket) -> PyShark -> Active Streamer fallback."""
+        """Run resilient live capture: Scapy Native (preferred for raw wire capture) -> PyShark -> Active Streamer fallback."""
         # Preference 1: Native Scapy sniffing (direct raw socket, clean timeout handling)
         try:
             self._start_scapy(duration)
