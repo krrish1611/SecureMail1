@@ -289,3 +289,97 @@ class HistoryTrendsResponse(BaseModel):
     total_critical_detected: int = 0
     points: List[Dict[str, Any]] = []
 
+
+# --- Feature: PQC Readiness Radar ---
+
+class PqcRadarResponse(BaseModel):
+    job_id: str
+    total_sessions: int = 0
+    quantum_resistant: int = 0
+    transitional: int = 0
+    high_risk: int = 0
+    migration_readiness_score: float = 0.0
+    hndl_breakdown: Dict[str, int] = {}  # CRITICAL/HIGH/MEDIUM/LOW counts
+    nist_fips_203: Dict[str, Any] = {}  # ML-KEM / Kyber compliance
+    nist_fips_204: Dict[str, Any] = {}  # ML-DSA / Dilithium compliance
+    nist_fips_205: Dict[str, Any] = {}  # SLH-DSA / SPHINCS+ compliance
+    kem_algorithms_seen: List[str] = []
+    signature_schemes_seen: List[str] = []
+    per_session_summary: List[Dict[str, Any]] = []
+    recommendations: List[str] = []
+
+
+# --- Feature: Remediate (Job-level hardening) ---
+
+class RemediateIssue(BaseModel):
+    id: str
+    title: str
+    severity: str
+    category: str  # tls | email_auth | protocol | pqc
+    count: int = 1
+
+class RemediateResponse(BaseModel):
+    job_id: str
+    total_issues: int = 0
+    issues: List[RemediateIssue] = []
+    snippets: Dict[str, HardeningSnippetModel] = {}
+    exchange_config: Optional[str] = None
+    download_links: Dict[str, str] = {}
+
+
+# --- Feature: Email Protocol Compliance Matrix ---
+
+class EmailProtocolCheck(BaseModel):
+    standard: str
+    status: str  # PASS | FAIL | WARN | N/A
+    record_value: Optional[str] = None
+    grade: str = "N/A"
+    details: str = ""
+    recommendation: str = ""
+
+class EmailComplianceResponse(BaseModel):
+    job_id: str
+    domain: Optional[str] = None
+    overall_score: float = 0.0
+    overall_grade: str = "N/A"
+    checks: List[EmailProtocolCheck] = []
+    email_auth: Optional[Dict[str, Any]] = None
+
+
+# --- Feature: MITM Simulation Playground ---
+
+class MitmSimulateRequest(BaseModel):
+    from_addr: Optional[str] = "cfo@acme-corp.com"
+    to_addr: Optional[str] = "finance-team@acme-corp.com"
+    subject: Optional[str] = "Q3 Board Meeting — Confidential Financial Results"
+    body: Optional[str] = "Hi Team,\n\nAttached are the Q3 financial results for board review.\nRevenue: $42.7M (+18% YoY)\nNet Income: $8.3M\nProjected Q4: $51.2M\n\nPlease treat as STRICTLY CONFIDENTIAL until the public earnings call on Oct 15.\n\nBest,\nSarah Chen\nCFO, ACME Corp"
+    auth_user: Optional[str] = "cfo@acme-corp.com"
+    auth_password: Optional[str] = "Qu4rt3rly$ecure!2026"
+    attachment: Optional[str] = "Q3_Financial_Results_CONFIDENTIAL.xlsx (2.4 MB)"
+    job_id: Optional[str] = None
+    session_id: Optional[str] = None
+
+class MitmScenario(BaseModel):
+    scenario: str  # cleartext | tls12 | pqc_tls13
+    label: str
+    tls_version: Optional[str] = None
+    cipher_suite: Optional[str] = None
+    key_exchange: Optional[str] = None
+    is_encrypted: bool = False
+    is_quantum_safe: bool = False
+    hndl_risk: str = "N/A"
+    original_email: Dict[str, str] = {}
+    attacker_view: Dict[str, str] = {}
+    risk_color: str = "#767270"
+    risk_label: str = "Unknown"
+    wire_hex_dump: Optional[str] = None
+    crypto_details: Optional[Dict[str, Any]] = None
+    hndl_details: Optional[Dict[str, Any]] = None
+
+class MitmSimulateResponse(BaseModel):
+    scenarios: List[MitmScenario] = []
+    sample_email: Dict[str, str] = {}
+    available_sessions: List[Dict[str, Any]] = []
+    selected_session_id: Optional[str] = None
+    is_real_crypto: bool = True
+

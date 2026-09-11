@@ -349,6 +349,36 @@ export default function App() {
   const [compareSelections, setCompareSelections] = useState(new Set())
   const [compareModalOpen, setCompareModalOpen] = useState(false)
 
+  // PQC Readiness Radar State
+  const [pqcRadar, setPqcRadar] = useState(null)
+  const [pqcRadarLoading, setPqcRadarLoading] = useState(false)
+
+  // Email Protocol Compliance Matrix State
+  const [emailCompliance, setEmailCompliance] = useState(null)
+  const [emailComplianceLoading, setEmailComplianceLoading] = useState(false)
+
+  // Remediate Tab State
+  const [remediateData, setRemediateData] = useState(null)
+  const [remediateLoading, setRemediateLoading] = useState(false)
+  const [activeRemediateTab, setActiveRemediateTab] = useState('postfix')
+
+  // MITM Simulation State
+  const [mitmData, setMitmData] = useState(null)
+  const [mitmLoading, setMitmLoading] = useState(false)
+  const [mitmActiveScenario, setMitmActiveScenario] = useState('cleartext')
+  const [mitmViewMode, setMitmViewMode] = useState('fields') // 'fields' | 'hexdump' | 'telemetry'
+  const [mitmCraftOpen, setMitmCraftOpen] = useState(false)
+  const [mitmSelectedSessionId, setMitmSelectedSessionId] = useState('')
+  const [mitmForm, setMitmForm] = useState({
+    from_addr: 'cfo@acme-corp.com',
+    to_addr: 'finance-team@acme-corp.com',
+    subject: 'Q3 Board Meeting — Confidential Financial Results',
+    body: 'Hi Team,\n\nAttached are the Q3 financial results for board review.\nRevenue: $42.7M (+18% YoY)\nNet Income: $8.3M\nProjected Q4: $51.2M\n\nPlease treat as STRICTLY CONFIDENTIAL until the public earnings call on Oct 15.\n\nBest,\nSarah Chen\nCFO, ACME Corp',
+    auth_user: 'cfo@acme-corp.com',
+    auth_password: 'Qu4rt3rly$ecure!2026',
+    attachment: 'Q3_Financial_Results_CONFIDENTIAL.xlsx (2.4 MB)',
+  })
+
   const fileInputRef = useRef(null)
 
   // Copy-to-clipboard feedback
@@ -406,6 +436,68 @@ export default function App() {
     }
   }
 
+  const loadPqcRadar = async (id) => {
+    setPqcRadarLoading(true)
+    try {
+      const resp = await axios.get(`/api/jobs/${id}/pqc-radar`)
+      setPqcRadar(resp.data)
+    } catch (e) { console.error('PQC Radar load failed:', e) }
+    finally { setPqcRadarLoading(false) }
+  }
+
+  const loadEmailCompliance = async (id) => {
+    setEmailComplianceLoading(true)
+    try {
+      const resp = await axios.get(`/api/jobs/${id}/email-compliance`)
+      setEmailCompliance(resp.data)
+    } catch (e) { console.error('Email compliance load failed:', e) }
+    finally { setEmailComplianceLoading(false) }
+  }
+
+  const loadRemediate = async (id) => {
+    setRemediateLoading(true)
+    try {
+      const resp = await axios.get(`/api/jobs/${id}/remediate`)
+      setRemediateData(resp.data)
+    } catch (e) { console.error('Remediate load failed:', e) }
+    finally { setRemediateLoading(false) }
+  }
+
+  const loadMitmSimulation = async (customPayload = null, sessId = null) => {
+    setMitmLoading(true)
+    try {
+      if (customPayload) {
+        const resp = await axios.post('/api/tools/mitm-simulate', {
+          ...customPayload,
+          job_id: jobId || undefined,
+          session_id: sessId || mitmSelectedSessionId || undefined,
+        })
+        setMitmData(resp.data)
+      } else {
+        const params = new URLSearchParams()
+        if (jobId) params.append('job_id', jobId)
+        const targetSess = sessId !== null ? sessId : mitmSelectedSessionId
+        if (targetSess) params.append('session_id', targetSess)
+        const queryStr = params.toString() ? `?${params.toString()}` : ''
+        const resp = await axios.get(`/api/tools/mitm-simulate${queryStr}`)
+        setMitmData(resp.data)
+        if (resp.data.sample_email && !customPayload) {
+          setMitmForm(prev => ({
+            ...prev,
+            from_addr: resp.data.sample_email.from || prev.from_addr,
+            to_addr: resp.data.sample_email.to || prev.to_addr,
+            subject: resp.data.sample_email.subject || prev.subject,
+            body: resp.data.sample_email.body || prev.body,
+            auth_user: resp.data.sample_email.auth_user || prev.auth_user,
+            auth_password: resp.data.sample_email.auth_password || prev.auth_password,
+            attachment: resp.data.sample_email.attachment || prev.attachment,
+          }))
+        }
+      }
+    } catch (e) { console.error('MITM simulate failed:', e) }
+    finally { setMitmLoading(false) }
+  }
+
   const processJobData = async (data) => {
     setJobId(data.job_id)
     setOverall(data.overall)
@@ -417,6 +509,8 @@ export default function App() {
     const sumRes = await axios.get(`/api/jobs/${data.job_id}/summary`)
     setSessions(sumRes.data)
     loadExecutiveSummary(data.job_id)
+    loadPqcRadar(data.job_id)
+    loadEmailCompliance(data.job_id)
   }
 
   const doProbeDomain = async (customDomain = null) => {
@@ -833,6 +927,8 @@ export default function App() {
     if (tab === 'ml') { loadMlStatus(); loadHistory(); }
     if (tab === 'diagnostics') loadDiagnostics()
     if (tab === 'history') { loadHistory(); loadTrends(); }
+    if (tab === 'remediate' && jobId) loadRemediate(jobId)
+    if (tab === 'mitm') loadMitmSimulation()
   }
 
   // Session Accordion Toggle
@@ -1074,6 +1170,20 @@ export default function App() {
             <rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
           </svg>
           System Diagnostics
+        </button>
+
+        <button className={`nav-tab-btn ${activeTab === 'remediate' ? 'active' : ''}`} onClick={() => handleTabSwitch('remediate')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+          </svg>
+          Remediate
+        </button>
+
+        <button className={`nav-tab-btn ${activeTab === 'mitm' ? 'active' : ''}`} onClick={() => handleTabSwitch('mitm')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          MITM Sim
         </button>
 
         <button className={`nav-tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => handleTabSwitch('history')}>
@@ -2426,6 +2536,142 @@ export default function App() {
             )}
           </div>
         </>
+      )}
+
+      {/* ==========================================================================
+          PQC READINESS RADAR (inside Analysis tab area, visible when analysis is loaded)
+         ========================================================================== */}
+      {activeTab === 'analysis' && jobId && !loading && (
+        <div className="pqc-radar-section">
+          <div className="panel-card">
+            <div className="panel-header">
+              <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                Post-Quantum Cryptography (PQC) Readiness Radar
+              </h3>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>NIST FIPS 203 / 204 / 205 Compliance Assessment</span>
+            </div>
+
+            {pqcRadarLoading && <div className="loading-card"><div className="spinner"></div><span>Analyzing PQC readiness…</span></div>}
+
+            {pqcRadar && !pqcRadarLoading && (
+              <div className="pqc-radar-content">
+                {/* Migration Readiness Score */}
+                <div className="pqc-radar-top-grid">
+                  <div className="pqc-score-ring-box">
+                    <PostureRing score={pqcRadar.migration_readiness_score} size={90} strokeWidth={8} />
+                    <div className="pqc-score-label">Migration Readiness</div>
+                  </div>
+
+                  <div className="pqc-status-breakdown">
+                    <div className="pqc-status-item safe">
+                      <span className="pqc-status-count">{pqcRadar.quantum_resistant}</span>
+                      <span className="pqc-status-text">Quantum Resistant</span>
+                    </div>
+                    <div className="pqc-status-item warn">
+                      <span className="pqc-status-count">{pqcRadar.transitional}</span>
+                      <span className="pqc-status-text">Transitional (Classical)</span>
+                    </div>
+                    <div className="pqc-status-item danger">
+                      <span className="pqc-status-count">{pqcRadar.high_risk}</span>
+                      <span className="pqc-status-text">High Quantum Risk</span>
+                    </div>
+                  </div>
+
+                  {/* HNDL Risk Breakdown */}
+                  <div className="pqc-hndl-box">
+                    <div className="pqc-hndl-title">⚡ HNDL Risk (Harvest Now, Decrypt Later)</div>
+                    <div className="pqc-hndl-grid">
+                      {Object.entries(pqcRadar.hndl_breakdown).map(([level, count]) => (
+                        <div key={level} className={`pqc-hndl-item ${level.toLowerCase()}`}>
+                          <span className="pqc-hndl-count">{count}</span>
+                          <span className="pqc-hndl-label">{level}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* NIST FIPS Standard Badges */}
+                <div className="pqc-nist-grid">
+                  {[pqcRadar.nist_fips_203, pqcRadar.nist_fips_204, pqcRadar.nist_fips_205].map((fips, i) => (
+                    <div key={i} className={`pqc-nist-card ${fips?.status === 'COMPLIANT' ? 'compliant' : 'not-deployed'}`}>
+                      <div className="pqc-nist-badge">{fips?.status === 'COMPLIANT' ? '✓' : '✗'}</div>
+                      <div className="pqc-nist-standard">{fips?.standard}</div>
+                      <div className="pqc-nist-desc">{fips?.description}</div>
+                      <div className="pqc-nist-sessions">{fips?.compliant_sessions || 0} session(s)</div>
+                      {fips?.algorithms?.length > 0 && (
+                        <div className="pqc-nist-algos">{fips.algorithms.join(', ')}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Recommendations */}
+                {pqcRadar.recommendations?.length > 0 && (
+                  <div className="pqc-recommendations">
+                    <div className="pqc-rec-title">📋 Recommendations</div>
+                    {pqcRadar.recommendations.map((r, i) => (
+                      <div key={i} className="pqc-rec-item">{r}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ==========================================================================
+          EMAIL PROTOCOL COMPLIANCE MATRIX (inside Analysis tab, after PQC Radar)
+         ========================================================================== */}
+      {activeTab === 'analysis' && jobId && !loading && (
+        <div className="email-compliance-section">
+          <div className="panel-card">
+            <div className="panel-header">
+              <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Email Protocol Compliance Matrix
+              </h3>
+              {emailCompliance && <span className={`email-compliance-grade grade-${emailCompliance.overall_grade}`}>{emailCompliance.overall_grade}</span>}
+            </div>
+
+            {emailComplianceLoading && <div className="loading-card"><div className="spinner"></div><span>Evaluating email protocols…</span></div>}
+
+            {emailCompliance && !emailComplianceLoading && (
+              <div className="email-compliance-content">
+                {emailCompliance.domain && (
+                  <div className="email-compliance-domain">Domain: <strong>{emailCompliance.domain}</strong> · Score: <strong>{emailCompliance.overall_score}/100</strong></div>
+                )}
+                <div className="email-compliance-table">
+                  <div className="ec-header-row">
+                    <div className="ec-col-standard">Standard</div>
+                    <div className="ec-col-status">Status</div>
+                    <div className="ec-col-grade">Grade</div>
+                    <div className="ec-col-detail">Details</div>
+                    <div className="ec-col-rec">Recommendation</div>
+                  </div>
+                  {emailCompliance.checks.map((c, i) => (
+                    <div key={i} className={`ec-row ec-status-${c.status.toLowerCase()}`}>
+                      <div className="ec-col-standard">{c.standard}</div>
+                      <div className="ec-col-status">
+                        <span className={`ec-badge ec-badge-${c.status.toLowerCase()}`}>{c.status}</span>
+                      </div>
+                      <div className="ec-col-grade">
+                        <span className={`ec-grade grade-${c.grade}`}>{c.grade}</span>
+                      </div>
+                      <div className="ec-col-detail">
+                        {c.record_value && <div className="ec-record">{c.record_value}</div>}
+                        <div>{c.details}</div>
+                      </div>
+                      <div className="ec-col-rec">{c.recommendation}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* ==========================================================================
@@ -3902,6 +4148,440 @@ export default function App() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ==========================================================================
+          REMEDIATE TAB
+         ========================================================================== */}
+      {activeTab === 'remediate' && (
+        <div className="remediate-container">
+          {!jobId && (
+            <div className="panel-card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
+              <div style={{ color: 'var(--text-muted)', marginTop: '16px', fontSize: '14px' }}>Run a PCAP analysis or Domain Probe first to generate remediation configs.</div>
+            </div>
+          )}
+
+          {remediateLoading && <div className="loading-card"><div className="spinner"></div><span>Generating hardening configurations…</span></div>}
+
+          {remediateData && !remediateLoading && (
+            <>
+              {/* Detected Issues Summary */}
+              <div className="panel-card">
+                <div className="panel-header">
+                  <h3>🔍 Detected Weaknesses ({remediateData.total_issues})</h3>
+                </div>
+                <div className="remediate-issues-grid">
+                  {remediateData.issues.map((issue, i) => (
+                    <div key={i} className={`remediate-issue-card sev-${issue.severity}`}>
+                      <div className="remediate-issue-header">
+                        <span className={`sev-dot sev-${issue.severity}`}></span>
+                        <span className="remediate-issue-title">{issue.title}</span>
+                        <span className="remediate-issue-badge">{issue.severity.toUpperCase()}</span>
+                      </div>
+                      <div className="remediate-issue-meta">
+                        <span className="remediate-issue-cat">{issue.category}</span>
+                        <span className="remediate-issue-count">×{issue.count} session(s)</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hardening Config Tabs */}
+              <div className="panel-card">
+                <div className="panel-header">
+                  <h3>🔧 Hardening Configuration Snippets</h3>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button className="btn-secondary" style={{ fontSize: '11px' }} onClick={() => downloadHardeningScript('linux')}>⬇ Linux Script (.sh)</button>
+                    <button className="btn-secondary" style={{ fontSize: '11px' }} onClick={() => downloadHardeningScript('windows')}>⬇ Windows Script (.ps1)</button>
+                  </div>
+                </div>
+
+                <div className="remediate-daemon-tabs">
+                  {['postfix', 'dovecot', 'exim', 'sendmail', 'exchange'].map(d => (
+                    <button key={d} className={`remediate-daemon-tab ${activeRemediateTab === d ? 'active' : ''}`} onClick={() => setActiveRemediateTab(d)}>
+                      {d === 'exchange' ? 'Exchange' : d.charAt(0).toUpperCase() + d.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {activeRemediateTab !== 'exchange' && remediateData.snippets[activeRemediateTab] && (
+                  <div className="remediate-config-block">
+                    <div className="remediate-config-meta">
+                      <span>📁 {remediateData.snippets[activeRemediateTab].target_file}</span>
+                      <button className="copy-mini-btn" onClick={() => copyToClipboard(remediateData.snippets[activeRemediateTab].config_text, `rem-${activeRemediateTab}`)}>  {copiedKey === `rem-${activeRemediateTab}` ? '✓ Copied' : '📋 Copy'}</button>
+                    </div>
+                    <pre className="remediate-pre">{remediateData.snippets[activeRemediateTab].config_text}</pre>
+                    <div className="remediate-explanation">
+                      <strong>Explanation:</strong> {remediateData.snippets[activeRemediateTab].explanation}
+                    </div>
+                    {remediateData.snippets[activeRemediateTab].reload_command && (
+                      <div className="remediate-reload">
+                        <strong>Apply:</strong> <code>{remediateData.snippets[activeRemediateTab].reload_command}</code>
+                      </div>
+                    )}
+                    {remediateData.snippets[activeRemediateTab].remediated_findings?.length > 0 && (
+                      <div className="remediate-findings-list">
+                        <strong>Issues Remediated:</strong>
+                        <ul>{remediateData.snippets[activeRemediateTab].remediated_findings.map((f, i) => <li key={i}>{f}</li>)}</ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeRemediateTab === 'exchange' && remediateData.exchange_config && (
+                  <div className="remediate-config-block">
+                    <div className="remediate-config-meta">
+                      <span>📁 Exchange Management Shell (PowerShell)</span>
+                      <button className="copy-mini-btn" onClick={() => copyToClipboard(remediateData.exchange_config, 'rem-exchange')}>{copiedKey === 'rem-exchange' ? '✓ Copied' : '📋 Copy'}</button>
+                    </div>
+                    <pre className="remediate-pre">{remediateData.exchange_config}</pre>
+                    <div className="remediate-explanation">
+                      <strong>Explanation:</strong> Disables legacy TLS (SSLv2/3, TLS 1.0/1.1), enables TLS 1.2/1.3, enforces AEAD cipher suites, and configures Exchange Send/Receive connectors for mandatory TLS.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ==========================================================================
+          MITM SIMULATION PLAYGROUND TAB (Real Cryptographic Interception Engine)
+         ========================================================================== */}
+      {activeTab === 'mitm' && (
+        <div className="mitm-container">
+          {mitmLoading && <div className="loading-card"><div className="spinner"></div><span>Executing real cryptographic MITM simulation…</span></div>}
+
+          {mitmData && !mitmLoading && (() => {
+            const scenario = mitmData.scenarios.find(s => s.scenario === mitmActiveScenario) || mitmData.scenarios[0]
+            return (
+              <>
+                <div className="panel-card mitm-header-card">
+                  <div className="panel-header">
+                    <div>
+                      <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                        MITM Attack Simulation Playground
+                      </h3>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Live Cryptographic Wire Interception · AES-256-GCM · NIST FIPS 203 ML-KEM-768
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {mitmData.available_sessions?.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>Session:</span>
+                          <select
+                            className="form-control"
+                            style={{ fontSize: '11px', padding: '4px 8px', maxWidth: '240px' }}
+                            value={mitmSelectedSessionId}
+                            onChange={(e) => {
+                              setMitmSelectedSessionId(e.target.value)
+                              loadMitmSimulation(null, e.target.value)
+                            }}
+                          >
+                            <option value="">(Custom / Corporate Preset)</option>
+                            {mitmData.available_sessions.map(s => (
+                              <option key={s.id} value={s.id}>{s.display_name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <button
+                        className="btn-secondary"
+                        style={{ fontSize: '11px', padding: '5px 12px' }}
+                        onClick={() => setMitmCraftOpen(!mitmCraftOpen)}
+                      >
+                        {mitmCraftOpen ? '✕ Close Craft Form' : '✏️ Craft Custom Email'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Interactive Custom Crafting Panel */}
+                  {mitmCraftOpen && (
+                    <div className="mitm-craft-card">
+                      <div className="mitm-craft-title">🛠 Craft Custom Email for Interception Attack</div>
+                      <div className="mitm-craft-grid">
+                        <div className="form-group">
+                          <label>From:</label>
+                          <input
+                            type="text"
+                            value={mitmForm.from_addr}
+                            onChange={e => setMitmForm({ ...mitmForm, from_addr: e.target.value })}
+                            placeholder="sender@domain.com"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>To:</label>
+                          <input
+                            type="text"
+                            value={mitmForm.to_addr}
+                            onChange={e => setMitmForm({ ...mitmForm, to_addr: e.target.value })}
+                            placeholder="recipient@domain.com"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Subject:</label>
+                          <input
+                            type="text"
+                            value={mitmForm.subject}
+                            onChange={e => setMitmForm({ ...mitmForm, subject: e.target.value })}
+                            placeholder="Confidential Subject"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Auth Username:</label>
+                          <input
+                            type="text"
+                            value={mitmForm.auth_user}
+                            onChange={e => setMitmForm({ ...mitmForm, auth_user: e.target.value })}
+                            placeholder="smtp_user"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Auth Password:</label>
+                          <input
+                            type="text"
+                            value={mitmForm.auth_password}
+                            onChange={e => setMitmForm({ ...mitmForm, auth_password: e.target.value })}
+                            placeholder="secret_pass"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Attachment Name:</label>
+                          <input
+                            type="text"
+                            value={mitmForm.attachment}
+                            onChange={e => setMitmForm({ ...mitmForm, attachment: e.target.value })}
+                            placeholder="document.pdf"
+                          />
+                        </div>
+                      </div>
+                      <div className="form-group" style={{ marginTop: '8px' }}>
+                        <label>Body Text:</label>
+                        <textarea
+                          rows="3"
+                          value={mitmForm.body}
+                          onChange={e => setMitmForm({ ...mitmForm, body: e.target.value })}
+                          placeholder="Email body contents..."
+                          style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: '11.5px', padding: '8px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                        <button
+                          className="btn-primary"
+                          style={{ fontSize: '12px' }}
+                          onClick={() => loadMitmSimulation(mitmForm)}
+                        >
+                          ⚡ Execute Real Interception Attack
+                        </button>
+                        <button
+                          className="btn-secondary"
+                          style={{ fontSize: '12px' }}
+                          onClick={() => {
+                            const resetObj = {
+                              from_addr: 'cfo@acme-corp.com',
+                              to_addr: 'finance-team@acme-corp.com',
+                              subject: 'Q3 Board Meeting — Confidential Financial Results',
+                              body: 'Hi Team,\n\nAttached are the Q3 financial results for board review.\nRevenue: $42.7M (+18% YoY)\nNet Income: $8.3M\nProjected Q4: $51.2M\n\nPlease treat as STRICTLY CONFIDENTIAL until the public earnings call on Oct 15.\n\nBest,\nSarah Chen\nCFO, ACME Corp',
+                              auth_user: 'cfo@acme-corp.com',
+                              auth_password: 'Qu4rt3rly$ecure!2026',
+                              attachment: 'Q3_Financial_Results_CONFIDENTIAL.xlsx (2.4 MB)',
+                            }
+                            setMitmForm(resetObj)
+                            loadMitmSimulation(resetObj)
+                          }}
+                        >
+                          Reset to Default Preset
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Scenario Toggle Buttons */}
+                  <div className="mitm-scenario-tabs">
+                    {mitmData.scenarios.map(s => (
+                      <button key={s.scenario}
+                        className={`mitm-scenario-btn ${mitmActiveScenario === s.scenario ? 'active' : ''}`}
+                        style={{ '--scenario-color': s.risk_color }}
+                        onClick={() => setMitmActiveScenario(s.scenario)}>
+                        <span className="mitm-scenario-dot" style={{ background: s.risk_color }}></span>
+                        {s.scenario === 'cleartext' ? '🔓 Cleartext (Port 25)' : s.scenario === 'tls12' ? '🔒 TLS 1.2 (ECDHE-AES-GCM)' : '🛡 PQC TLS 1.3 (ML-KEM Hybrid)'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Scenario Info Bar with View Switcher */}
+                <div className="mitm-info-bar" style={{ borderLeftColor: scenario.risk_color }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <div className="mitm-info-label">{scenario.label}</div>
+                    <div className="mitm-info-meta">
+                      {scenario.tls_version && <span>TLS: {scenario.tls_version}</span>}
+                      {scenario.cipher_suite && <span>Cipher: {scenario.cipher_suite}</span>}
+                      {scenario.key_exchange && <span>KEX: {scenario.key_exchange}</span>}
+                      <span className="mitm-risk-pill" style={{ background: scenario.risk_color }}>{scenario.risk_label}</span>
+                    </div>
+                  </div>
+
+                  {/* View Mode Buttons */}
+                  <div className="mitm-view-modes">
+                    <button
+                      className={`mitm-view-btn ${mitmViewMode === 'fields' ? 'active' : ''}`}
+                      onClick={() => setMitmViewMode('fields')}
+                    >
+                      📋 Extracted Fields
+                    </button>
+                    <button
+                      className={`mitm-view-btn ${mitmViewMode === 'hexdump' ? 'active' : ''}`}
+                      onClick={() => setMitmViewMode('hexdump')}
+                    >
+                      💻 Wire Hex Dump
+                    </button>
+                    <button
+                      className={`mitm-view-btn ${mitmViewMode === 'telemetry' ? 'active' : ''}`}
+                      onClick={() => setMitmViewMode('telemetry')}
+                    >
+                      ⚡ Crypto Telemetry
+                    </button>
+                  </div>
+                </div>
+
+                {/* Split Panel: Legitimate vs Attacker View */}
+                <div className="mitm-split-panel">
+                  {/* Left: Original Email */}
+                  <div className="mitm-panel mitm-panel-legit">
+                    <div className="mitm-panel-title">📧 Legitimate Email (Sender Side)</div>
+                    <div className="mitm-field">
+                      <span className="mitm-field-label">From:</span>
+                      <span>{mitmData.sample_email.from}</span>
+                    </div>
+                    <div className="mitm-field">
+                      <span className="mitm-field-label">To:</span>
+                      <span>{mitmData.sample_email.to}</span>
+                    </div>
+                    <div className="mitm-field">
+                      <span className="mitm-field-label">Subject:</span>
+                      <span>{mitmData.sample_email.subject}</span>
+                    </div>
+                    <div className="mitm-field-body">
+                      <pre>{mitmData.sample_email.body}</pre>
+                    </div>
+                    <div className="mitm-field">
+                      <span className="mitm-field-label">🔑 Auth:</span>
+                      <span>{mitmData.sample_email.auth_user} / {mitmData.sample_email.auth_password}</span>
+                    </div>
+                    <div className="mitm-field">
+                      <span className="mitm-field-label">📎 Attachment:</span>
+                      <span>{mitmData.sample_email.attachment}</span>
+                    </div>
+                  </div>
+
+                  {/* Right: Attacker's View */}
+                  <div className={`mitm-panel mitm-panel-attacker mitm-${scenario.scenario}`}>
+                    <div className="mitm-panel-title" style={{ color: scenario.risk_color }}>
+                      👁 Attacker's Captured View ({mitmViewMode === 'fields' ? 'Decoded Elements' : mitmViewMode === 'hexdump' ? 'Raw Wire Trace' : 'Cryptanalysis'})
+                    </div>
+
+                    {/* View Mode 1: Fields */}
+                    {mitmViewMode === 'fields' && (
+                      <>
+                        <div className="mitm-field">
+                          <span className="mitm-field-label">Headers:</span>
+                          <pre className="mitm-captured">{scenario.attacker_view.captured_headers}</pre>
+                        </div>
+                        <div className="mitm-field">
+                          <span className="mitm-field-label">Subject:</span>
+                          <pre className="mitm-captured">{scenario.attacker_view.captured_subject}</pre>
+                        </div>
+                        <div className="mitm-field">
+                          <span className="mitm-field-label">Body:</span>
+                          <pre className="mitm-captured">{scenario.attacker_view.captured_body}</pre>
+                        </div>
+                        <div className="mitm-field">
+                          <span className="mitm-field-label">Credentials:</span>
+                          <pre className="mitm-captured" style={scenario.scenario === 'cleartext' ? { background: '#3b1115', color: '#ff7b82', border: '1px solid #ff595e60' } : {}}>
+                            {scenario.attacker_view.captured_credentials}
+                          </pre>
+                        </div>
+                        <div className="mitm-verdict" style={{ borderLeftColor: scenario.risk_color }}>
+                          {scenario.attacker_view.verdict}
+                        </div>
+                      </>
+                    )}
+
+                    {/* View Mode 2: Hex Dump */}
+                    {mitmViewMode === 'hexdump' && (
+                      <div className="mitm-hexdump-container">
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>
+                          Offset &nbsp; 00 01 02 03 04 05 06 07 &nbsp; 08 09 0a 0b 0c 0d 0e 0f &nbsp; ASCII Text
+                        </div>
+                        <pre className="mitm-hexdump-code">{scenario.wire_hex_dump}</pre>
+                        <div className="mitm-verdict" style={{ borderLeftColor: scenario.risk_color }}>
+                          {scenario.scenario === 'cleartext'
+                            ? '⚠️ CLEAR TEXT EXPOSURE — Inspect the ASCII column on the right. Notice how the SMTP commands, login credentials, and email headers are fully legible without requiring any key or decryption.'
+                            : scenario.scenario === 'tls12'
+                            ? '🔒 CLASSICAL ENCRYPTION — The wire dump contains pseudorandom AES-256-GCM ciphertext. Classical adversaries cannot read this today. However, an adversary harvesting this pcap can decrypt it once Shor\'s algorithm is operational.'
+                            : '🛡 QUANTUM-SECURE WIRE STREAM — Encrypted under AES-256-GCM with hybrid ML-KEM-768 key encapsulation. The lattice problem ensures that no classical or quantum adversary can extract the plaintext.'}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* View Mode 3: Telemetry */}
+                    {mitmViewMode === 'telemetry' && scenario.crypto_details && (
+                      <div className="mitm-telemetry-container">
+                        <div className="mitm-telemetry-grid">
+                          <div className="mitm-telemetry-item">
+                            <span className="mitm-telemetry-key">Symmetric Cipher</span>
+                            <span className="mitm-telemetry-val">{scenario.crypto_details.cipher}</span>
+                          </div>
+                          <div className="mitm-telemetry-item">
+                            <span className="mitm-telemetry-key">Key Strength</span>
+                            <span className="mitm-telemetry-val">{scenario.crypto_details.key_length} bits</span>
+                          </div>
+                          <div className="mitm-telemetry-item">
+                            <span className="mitm-telemetry-key">Key Exchange (KEX)</span>
+                            <span className="mitm-telemetry-val">{scenario.crypto_details.kex}</span>
+                          </div>
+                          <div className="mitm-telemetry-item">
+                            <span className="mitm-telemetry-key">Record Layer</span>
+                            <span className="mitm-telemetry-val">{scenario.crypto_details.record_type}</span>
+                          </div>
+                          {scenario.crypto_details.nonce_hex && (
+                            <div className="mitm-telemetry-item" style={{ gridColumn: 'span 2' }}>
+                              <span className="mitm-telemetry-key">AEAD Nonce / IV</span>
+                              <code className="mitm-telemetry-code">{scenario.crypto_details.nonce_hex}</code>
+                            </div>
+                          )}
+                          {scenario.crypto_details.auth_tag && (
+                            <div className="mitm-telemetry-item" style={{ gridColumn: 'span 2' }}>
+                              <span className="mitm-telemetry-key">Authentication Tag</span>
+                              <code className="mitm-telemetry-code">{scenario.crypto_details.auth_tag}</code>
+                            </div>
+                          )}
+                        </div>
+
+                        {scenario.hndl_details && (
+                          <div className="mitm-hndl-card" style={{ borderLeftColor: scenario.risk_color }}>
+                            <div className="mitm-hndl-headline">
+                              ⚡ HNDL Decryptability Projection: <strong>{scenario.hndl_details.time_to_decrypt}</strong>
+                            </div>
+                            <div className="mitm-hndl-reason">{scenario.hndl_details.reason}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )
+          })()}
         </div>
       )}
 
