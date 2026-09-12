@@ -190,3 +190,37 @@ def test_api_new_endpoints(client):
     resp_pb_pdf = client.get(f"/api/jobs/{job_id}/playbook/pdf")
     assert resp_pb_pdf.status_code == 200
     assert resp_pb_pdf.headers["content-type"] == "application/pdf"
+
+
+def test_probe_domain_plaintext_session_tls_placeholders():
+    """Assert that for a plaintext probe result (tls_version=None), session.tls has explicit N/A placeholders."""
+    from unittest.mock import patch
+    mock_result = {
+        "success": True,
+        "port": 25,
+        "banner": "220 mail.insecure.test ESMTP",
+        "ehlo_capabilities": ["PIPELINING", "SIZE 10000000"],
+        "starttls_advertised": False,
+        "starttls_accepted": False,
+        "tls_version": None,
+        "cipher_suite": None,
+        "peer_cert_der": None,
+        "error": "STARTTLS not supported",
+    }
+    with patch("socket.getaddrinfo", return_value=[(None, None, None, None, ("198.51.100.1", 25))]):
+        with patch("core.domain_probe._probe_smtp_server", return_value=mock_result):
+            with patch("core.domain_probe.evaluate_dns_security", return_value=None):
+                with patch("core.domain_probe.evaluate_email_auth", return_value={"dmarc": {"policy": "reject", "present": True}}):
+                    session, _ = probe_domain("insecure.test", timeout=1.0)
+                    assert session.encrypted is False
+                    assert session.plaintext is True
+                    assert session.tls is not None
+                    assert session.tls.version == "N/A (No TLS Handshake)"
+                    assert session.tls.cipher_suite == "N/A (Plaintext Session)"
+                    assert session.tls.key_exchange == "N/A (Plaintext Session)"
+                    assert session.tls.key_exchange_group is None
+                    assert session.tls.signature_algorithm is None
+                    # Ensure PQC is also HIGH_QUANTUM_RISK and CRITICAL
+                    assert session.pqc.pqc_status == "HIGH_QUANTUM_RISK"
+                    assert session.pqc.hndl_risk == "CRITICAL"
+

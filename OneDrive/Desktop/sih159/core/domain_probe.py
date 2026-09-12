@@ -234,8 +234,6 @@ def probe_domain(domain: str, timeout: float = 6.0, use_ml: bool = True) -> Tupl
     )
 
     # 4. Attach TLS details
-    tls_version = probe_result.get("tls_version") or "TLSv1.2"
-    cipher_suite = probe_result.get("cipher_suite") or "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
     cert_der = probe_result.get("peer_cert_der")
 
     cert_info = None
@@ -268,16 +266,32 @@ def probe_domain(domain: str, timeout: float = 6.0, use_ml: bool = True) -> Tupl
     session.certificate = cert_info
 
     # Populate TLSInfo
-    tls_obj = TLSInfo(
-        version=tls_version,
-        cipher_suite=cipher_suite,
-        server_name=primary_host,
-        key_exchange="ECDHE",
-        key_exchange_group="X25519" if tls_version == "TLSv1.3" else "secp256r1",
-        signature_algorithm="rsa_pss_rsae_sha256" if tls_version == "TLSv1.3" else "sha256WithRSAEncryption",
-        certificate=[cert_der] if cert_der else [],
-        offered_ciphers=[cipher_suite, "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
-    )
+    if session.encrypted:
+        tls_version = probe_result.get("tls_version") or "TLSv1.2"
+        cipher_suite = probe_result.get("cipher_suite") or "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        tls_obj = TLSInfo(
+            version=tls_version,
+            cipher_suite=cipher_suite,
+            server_name=primary_host,
+            key_exchange="ECDHE",
+            key_exchange_group="X25519" if tls_version == "TLSv1.3" else "secp256r1",
+            signature_algorithm="rsa_pss_rsae_sha256" if tls_version == "TLSv1.3" else "sha256WithRSAEncryption",
+            certificate=[cert_der] if cert_der else [],
+            offered_ciphers=[cipher_suite, "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        )
+    else:
+        tls_version = None
+        cipher_suite = None
+        tls_obj = TLSInfo(
+            version="N/A (No TLS Handshake)",
+            cipher_suite="N/A (Plaintext Session)",
+            server_name=primary_host,
+            key_exchange="N/A (Plaintext Session)",
+            key_exchange_group=None,
+            signature_algorithm=None,
+            certificate=[],
+            offered_ciphers=[],
+        )
     session.tls = tls_obj
 
     # 5. Evaluate PQC
@@ -288,6 +302,7 @@ def probe_domain(domain: str, timeout: float = 6.0, use_ml: bool = True) -> Tupl
         key_exchange_group="X25519" if tls_version == "TLSv1.3" else "secp256r1",
         cipher_suite=cipher_suite,
         cert_sig_alg=cert_sig,
+        is_encrypted=session.encrypted,
     )
 
     # 6. Evaluate DNS Security (MTA-STS & DANE)

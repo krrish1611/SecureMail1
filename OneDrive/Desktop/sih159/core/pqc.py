@@ -83,7 +83,7 @@ def parse_named_group(group_id_or_name: Any) -> Optional[Dict[str, Any]]:
         cleaned = group_id_or_name.strip().lower().replace("-", "").replace("_", "")
         for gid, info in PQC_NAMED_GROUPS.items():
             candidate = info["name"].lower().replace("-", "").replace("_", "")
-            if cleaned == candidate or cleaned in candidate:
+            if cleaned == candidate:
                 return info
             # Also check hex string e.g. "0x6399"
             if group_id_or_name.lower().startswith("0x"):

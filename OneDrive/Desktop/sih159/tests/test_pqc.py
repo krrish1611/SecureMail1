@@ -90,3 +90,39 @@ def test_pqc_rule_emits_findings():
     pqc_vuln_ids = [f.id for f in findings_vuln if f.id.startswith("pqc.")]
     assert "pqc.harvest_decrypt_critical" in pqc_vuln_ids
     assert session_vuln.pqc.hndl_risk == "CRITICAL"
+
+
+def test_parse_named_group_classical_secp256r1_returns_none():
+    """Regression test: classical secp256r1 must not match hybrid SecP256r1MLKEM768."""
+    assert parse_named_group("secp256r1") is None
+    assert parse_named_group("SECP256R1") is None
+
+
+def test_unencrypted_failed_probe_assessed_as_high_quantum_risk():
+    """Regression test: unencrypted / failed TLS probe must be scored as HIGH_QUANTUM_RISK and CRITICAL HNDL risk."""
+    # With fallback tls_version string and key_exchange_group="secp256r1"
+    pqc = assess_pqc_readiness(
+        tls_version="TLSv1.2",
+        key_exchange="ECDHE",
+        key_exchange_group="secp256r1",
+        cipher_suite="TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+        cert_sig_alg="sha256WithRSAEncryption",
+        is_encrypted=False,
+    )
+    assert pqc.pqc_status == "HIGH_QUANTUM_RISK"
+    assert pqc.hndl_risk == "CRITICAL"
+    assert pqc.quantum_vulnerability_score == 100.0
+
+    # With tls_version=None
+    pqc_none = assess_pqc_readiness(
+        tls_version=None,
+        key_exchange="ECDHE",
+        key_exchange_group="secp256r1",
+        cipher_suite=None,
+        cert_sig_alg=None,
+        is_encrypted=False,
+    )
+    assert pqc_none.pqc_status == "HIGH_QUANTUM_RISK"
+    assert pqc_none.hndl_risk == "CRITICAL"
+    assert pqc_none.quantum_vulnerability_score == 100.0
+
