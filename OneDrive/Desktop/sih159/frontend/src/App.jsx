@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import axios from 'axios'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, BarChart, Bar,
@@ -440,6 +441,21 @@ export default function App({ theme: propTheme, toggleTheme: propToggleTheme }) 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
+
+  // Prevent background document scrolling when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = hardeningModalOpen || webhookModalOpen || compareModalOpen
+    if (isAnyModalOpen && typeof document !== 'undefined') {
+      document.body.classList.add('modal-open-lock')
+    } else if (typeof document !== 'undefined') {
+      document.body.classList.remove('modal-open-lock')
+    }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('modal-open-lock')
+      }
+    }
+  }, [hardeningModalOpen, webhookModalOpen, compareModalOpen])
 
   const openHardeningModal = async (sessionId) => {
     const targetSessionId = sessionId || (sessions && sessions.length > 0 ? sessions[0].session_id : 'default')
@@ -4289,7 +4305,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
 
 
       {/* 1-Click Server Hardening Generator Modal */}
-      {hardeningModalOpen && (
+      {hardeningModalOpen && typeof document !== 'undefined' && createPortal(
         <div className="modal-backdrop" onClick={() => setHardeningModalOpen(false)}>
           <div className="modal-card" style={{ maxWidth: '960px', width: '94%' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header" style={{ padding: '12px 18px' }}>
@@ -4443,11 +4459,12 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* SIEM / Slack / Discord Webhook Alerting Modal */}
-      {webhookModalOpen && (
+      {webhookModalOpen && typeof document !== 'undefined' && createPortal(
         <div className="modal-backdrop" onClick={() => setWebhookModalOpen(false)}>
           <div className="modal-card" style={{ maxWidth: '880px', width: '94%' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header" style={{ padding: '12px 18px' }}>
@@ -4604,7 +4621,8 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ==========================================================================
@@ -5042,11 +5060,12 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
       )}
 
       {/* Comparison Modal */}
-      {compareModalOpen && (
+      {compareModalOpen && typeof document !== 'undefined' && createPortal(
         <ComparisonView
           scans={historyScans.filter(s => compareSelections.has(s.id))}
           onClose={() => setCompareModalOpen(false)}
-        />
+        />,
+        document.body
       )}
 
       {/* Footer */}
