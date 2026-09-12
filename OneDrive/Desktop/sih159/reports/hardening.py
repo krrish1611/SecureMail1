@@ -215,6 +215,35 @@ def generate_sendmail_config(session: Session) -> HardeningSnippet:
     )
 
 
+def generate_exchange_config(session: Session) -> HardeningSnippet:
+    """Generate hardened Microsoft Exchange / PowerShell configuration."""
+    lines = [
+        "# =====================================================================",
+        "# SecureMailScope Hardened Microsoft Exchange Configuration (PowerShell)",
+        f"# Generated for session: {session.id}",
+        "# =====================================================================",
+        "# 1. Enforce mandatory TLS on Receive Connectors",
+        "Get-ReceiveConnector | Set-ReceiveConnector -SuppressXAnonymousTls $false -AuthMechanism Tls",
+        "",
+        "# 2. Require TLS for Outbound Send Connectors",
+        "Get-SendConnector | Set-SendConnector -IgnoreSTARTTLS $false -RequireTLS $true",
+        "",
+        "# 3. Enforce SChannel TLS 1.2+ & disable deprecated protocols in Windows Registry",
+        "New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\SCHANNEL\\Protocols\\TLS 1.2\\Server' -Name 'Enabled' -Value 1 -PropertyType 'DWord' -Force",
+        "New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\SCHANNEL\\Protocols\\TLS 1.2\\Server' -Name 'DisabledByDefault' -Value 0 -PropertyType 'DWord' -Force",
+        "New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\SCHANNEL\\Protocols\\TLS 1.0\\Server' -Name 'Enabled' -Value 0 -PropertyType 'DWord' -Force",
+        "New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\SCHANNEL\\Protocols\\TLS 1.1\\Server' -Name 'Enabled' -Value 0 -PropertyType 'DWord' -Force",
+    ]
+    return HardeningSnippet(
+        daemon="Exchange",
+        target_file="Exchange Management Shell / PowerShell",
+        config_text="\n".join(lines),
+        explanation="Configures Microsoft Exchange Receive/Send connectors for mandatory TLS and disables legacy protocols via Windows SChannel registry.",
+        remediated_findings=["Mandatory TLS on Connectors", "Disabled SChannel TLS 1.0/1.1"],
+        reload_command="Restart-Service MSExchangeTransport",
+    )
+
+
 def generate_hardening_package(session: Session) -> HardeningPackage:
     """Generate a full server hardening package for all supported mail servers."""
     domain = None
@@ -233,10 +262,11 @@ def generate_hardening_package(session: Session) -> HardeningPackage:
     package.snippets["dovecot"] = generate_dovecot_config(session)
     package.snippets["exim"] = generate_exim_config(session)
     package.snippets["sendmail"] = generate_sendmail_config(session)
+    package.snippets["exchange"] = generate_exchange_config(session)
 
     package.summary = (
         f"Hardening configuration generated for {session.id} ({session.protocol.upper() if session.protocol else 'SMTP'}). "
-        f"Contains automated remediations for Postfix, Dovecot, Exim4, and Sendmail."
+        f"Contains automated remediations for Postfix, Dovecot, Exim4, Sendmail, and Microsoft Exchange."
     )
 
     return package

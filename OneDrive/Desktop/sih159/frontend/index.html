@@ -6,7 +6,40 @@
     <title>SecureMailScope — AI-Assisted Cryptographic Posture Assessment</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Great+Vibes&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+      html, body {
+        background-color: #07090c;
+        margin: 0;
+        padding: 0;
+      }
+      html.theme-light, body.theme-light {
+        background-color: #ffffff !important;
+        color-scheme: light;
+      }
+      html.theme-dark, body.theme-dark {
+        background-color: #07090c !important;
+        color-scheme: dark;
+      }
+      #root {
+        min-height: 100vh;
+        background-color: inherit;
+      }
+    </style>
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('sms_landing_theme');
+          var isDark = t ? (t === 'dark') : false;
+          if (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            isDark = true;
+          }
+          document.documentElement.className = isDark ? 'theme-dark' : 'theme-light';
+          document.documentElement.style.backgroundColor = isDark ? '#07090c' : '#ffffff';
+          document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

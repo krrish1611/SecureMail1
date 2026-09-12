@@ -194,7 +194,7 @@ def to_csv(X: np.ndarray, y: np.ndarray, path: str):
     df.to_csv(path, index=False)
 
 
-def extract_baseline_from_sessions(sessions: List[Any]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def extract_baseline_from_sessions(sessions: List[any]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Extract classifier training pairs (X, y) and anomaly baseline vectors (X_base) from sessions.
 
     Works with Session objects or serialized session dictionaries.

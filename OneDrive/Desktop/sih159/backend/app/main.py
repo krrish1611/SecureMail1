@@ -39,6 +39,9 @@ if os.path.isdir(FRONTEND_DIR):
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
+        # Never return index.html for API endpoints
+        if full_path.startswith("api/") or full_path == "api":
+            raise HTTPException(status_code=404, detail=f"API endpoint not found: /{full_path}")
         file_path = os.path.join(FRONTEND_DIR, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)

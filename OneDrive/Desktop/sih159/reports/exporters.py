@@ -893,12 +893,12 @@ def _generate_compliance_html_section(sessions: List[Session]) -> str:
     data = compliance_report_to_dict(report)
 
     verdict_colors = {
-        "COMPLIANT": "#22c55e",
+        "COMPLIANT": "#cbff00",
         "NON-COMPLIANT": "#ef4444",
         "N/A": "#6b7280",
     }
     status_colors = {
-        "PASS": "#22c55e",
+        "PASS": "#cbff00",
         "FAIL": "#ef4444",
         "N/A": "#6b7280",
     }
@@ -913,7 +913,7 @@ def _generate_compliance_html_section(sessions: List[Session]) -> str:
           <div style='font-size:14px; color:#93c5fd; font-weight:bold;'>{fw["framework"]}</div>
           <div style='font-size:24px; font-weight:bold; color:{color}; margin:8px 0;'>{fw["verdict"]}</div>
           <div style='font-size:12px; color:#9ca3af;'>
-            <span style='color:#22c55e;'>✓ {fw["passed"]} passed</span> ·
+            <span style='color:#cbff00;'>✓ {fw["passed"]} passed</span> ·
             <span style='color:#ef4444;'>✗ {fw["failed"]} failed</span> ·
             <span style='color:#6b7280;'>— {fw["na"]} N/A</span>
           </div>

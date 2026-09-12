@@ -1,0 +1,3324 @@
+/* ==========================================================================
+   SecureMailScope — Clean Minimalist Cyber/Enterprise Landing Page
+   Aesthetic: Refined Obsidian + Chartreuse Accents (#ccff00)
+   Finish: TRANSLUCENT MATTE (Subtle glassmorphism, soft diffused contrast)
+   Typography: Inter / Space Grotesk / JetBrains Mono (Clean, balanced)
+   ========================================================================== */
+
+:root {
+  --lp-bg-void: #07090c;
+  --lp-bg-canvas: #0a0d12;
+  --lp-bg-frame: #0d1217;
+
+  /* Translucent Matte Cards */
+  --lp-card-bg: rgba(15, 20, 26, 0.72);
+  --lp-card-hover-bg: rgba(22, 29, 38, 0.88);
+  --lp-card-border: rgba(255, 255, 255, 0.08);
+  --lp-card-border-hover: rgba(204, 255, 0, 0.35);
+
+  /* Primary Accent: Chartreuse Lime (Matte Finish) */
+  --lp-accent-chartreuse: #ccff00;
+  --lp-accent-chartreuse-hover: #b8e600;
+  --lp-accent-chartreuse-dim: rgba(204, 255, 0, 0.10);
+  --lp-accent-chartreuse-text: #06080a;
+
+  /* Tactical Accents */
+  --lp-accent-olive: #243328;
+  --lp-accent-cyan: #00e5ff;
+  --lp-accent-emerald: #10b981;
+  --lp-accent-coral: #ff595e;
+  --lp-accent-amber: #ffca3a;
+
+  /* Typography */
+  --lp-text-primary: #ffffff;
+  --lp-text-secondary: #94a3b8;
+  --lp-text-muted: #64748b;
+  --lp-text-dim: #334155;
+
+  /* Modern, Balanced Fonts (Not wide, not congested) */
+  --lp-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --lp-font-heading: 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+  --lp-font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+  /* Clean Translucent Matte Variables (Zero heavy borders or offset shadows) */
+  --lp-matte-shadow: none;
+  --lp-matte-btn-shadow: none;
+}
+
+/* Base Isolation with Cyber Mecha Chassis & Comic / Paper Matte Texture */
+.landing-page-root {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #07090c;
+  color: var(--lp-text-primary);
+  font-family: var(--lp-font-sans);
+  overflow-x: hidden;
+  position: relative;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   Cyber Mecha Chassis Backdrop Layers (Exact Reference Artwork)
+   ========================================================================== */
+
+.lp-tactical-mecha-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Full-Canvas Tactical Cyber Circuit Backdrop */
+.lp-mecha-canvas-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/cyber-mecha-pattern.png');
+  background-repeat: repeat-y;
+  background-position: center top;
+  background-size: 1016px auto;
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+/* Left Mecha Flank Chassis (Stepped armor, multi-track buses, chevrons) */
+.lp-mecha-flank-left {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: clamp(240px, 20vw, 380px);
+  height: 100%;
+  background-image: url('/cyber-mecha-left.png');
+  background-repeat: repeat-y;
+  background-position: left top;
+  background-size: 100% auto;
+  opacity: 0.88;
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 75%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 75%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* Right Mecha Flank Chassis (Triangular notch, ascending busway, chevrons) */
+.lp-mecha-flank-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: clamp(200px, 17vw, 320px);
+  height: 100%;
+  background-image: url('/cyber-mecha-right.png');
+  background-repeat: repeat-y;
+  background-position: right top;
+  background-size: 100% auto;
+  opacity: 0.88;
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 75%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 75%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* Mobile & Tablet Portrait Full Chassis Frame */
+.lp-mecha-full-mobile {
+  display: none;
+}
+
+@media (max-width: 860px) {
+
+  .lp-mecha-flank-left,
+  .lp-mecha-flank-right {
+    display: none;
+  }
+
+  .lp-mecha-full-mobile {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/cyber-mecha-full.png');
+    background-repeat: repeat-y;
+    background-position: center top;
+    background-size: 100% auto;
+    opacity: 0.78;
+  }
+}
+
+/* Ambient Cyber Vignette & Subtle Center Contrast */
+.lp-mecha-vignette-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(204, 255, 0, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 40%, rgba(7, 9, 12, 0.1) 0%, rgba(7, 9, 12, 0.5) 100%),
+    linear-gradient(180deg, rgba(7, 9, 12, 0.05) 0%, rgba(7, 9, 12, 0.3) 60%, rgba(7, 9, 12, 0.65) 100%);
+  pointer-events: none;
+}
+
+/* Paper Grain & Comic Halftone Texture */
+.lp-mecha-grid-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    /* Comic halftone fine stipple pattern */
+    radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    /* Organic paper grain / comic matte fiber */
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 14px 14px, 160px 160px;
+  pointer-events: none;
+}
+
+.lp-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+}
+
+/* Translucent Matte HUD Card */
+.lp-glass-card {
+  background: var(--lp-card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--lp-card-border);
+  border-radius: 8px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: none;
+  position: relative;
+}
+
+.lp-glass-card:hover {
+  background: var(--lp-card-hover-bg);
+  border-color: var(--lp-card-border-hover);
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   XOTC Cyber Card System (Photos 1, 2, 3)
+   - Tab notch top-left ([ MODULE / TRADE DETAILS ])
+   - 45° chamfer cut on bottom-right corner
+   - Chartreuse fine outline border (#ccff00)
+   - Translucent matte obsidian body (#0d1217)
+   - 5x7 dot-matrix grid accent
+   - Rounded-square chartreuse icon box
+   ========================================================================== */
+
+.lp-card-xotc {
+  position: relative;
+  background: rgba(255, 255, 255, 0.08);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%);
+  padding: 1px !important;
+  border: none !important;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: none;
+}
+
+.lp-card-xotc:hover {
+  background: rgba(204, 255, 0, 0.22);
+  box-shadow: none;
+  transform: translateY(-2px);
+}
+
+.lp-card-xotc-inner {
+  background: rgba(13, 17, 22, 0.84);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 23.5px), calc(100% - 23.5px) 100%, 0 100%);
+  padding: 24px;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  border-radius: 3px;
+}
+
+/* Card Tab Notch */
+.lp-card-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--lp-font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lp-accent-chartreuse);
+  background: rgba(204, 255, 0, 0.06);
+  border: 1px solid rgba(204, 255, 0, 0.18);
+  border-radius: 3px;
+  padding: 3.5px 9px;
+  margin-bottom: 16px;
+  align-self: flex-start;
+}
+
+/* Rounded-square Chartreuse Icon Box */
+.lp-icon-box-xotc {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  background: var(--lp-accent-chartreuse);
+  color: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+/* 5x7 Tactical Dot-Matrix Pattern (Photo 1) */
+.lp-dot-matrix {
+  display: grid;
+  grid-template-columns: repeat(5, 4px);
+  grid-template-rows: repeat(7, 4px);
+  gap: 3.5px;
+  opacity: 0.38;
+  pointer-events: none;
+  user-select: none;
+}
+
+.lp-dot-matrix .lp-dot {
+  width: 4px;
+  height: 4px;
+  background: var(--lp-accent-chartreuse);
+  border-radius: 1px;
+}
+
+/* Empty Media Wireframe Slot (Awaiting real image injection) */
+.lp-empty-media-slot {
+  width: 100%;
+  min-height: 200px;
+  border: 1px dashed rgba(255, 255, 255, 0.09);
+  background: radial-gradient(circle at 50% 50%, rgba(204, 255, 0, 0.02) 0%, rgba(10, 14, 18, 0.8) 100%);
+  border-radius: 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 26px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.lp-empty-media-slot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+.lp-empty-media-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--lp-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--lp-accent-chartreuse);
+  background: rgba(204, 255, 0, 0.08);
+  border: 1px solid rgba(204, 255, 0, 0.2);
+  padding: 6px 14px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  z-index: 2;
+}
+
+.lp-empty-media-sub {
+  font-size: 12px;
+  color: var(--lp-text-muted);
+  font-family: var(--lp-font-mono);
+  z-index: 2;
+}
+
+/* Subtle corner mark */
+.lp-corner-mark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: rgba(204, 255, 0, 0.3);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.lp-corner-mark-tl {
+  top: 6px;
+  left: 6px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.lp-corner-mark-tr {
+  top: 6px;
+  right: 6px;
+  border-top: 1px solid;
+  border-right: 1px solid;
+}
+
+.lp-corner-mark-bl {
+  bottom: 6px;
+  left: 6px;
+  border-bottom: 1px solid;
+  border-left: 1px solid;
+}
+
+.lp-corner-mark-br {
+  bottom: 6px;
+  right: 6px;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+/* ==========================================================================
+   Header & Navigation
+   ========================================================================== */
+
+.lp-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  background: rgba(7, 9, 12, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lp-header-inner {
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lp-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lp-brand-logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--lp-accent-chartreuse);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lp-bg-void);
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.6);
+}
+
+.lp-brand-text {
+  font-family: var(--lp-font-heading);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+.lp-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--lp-font-mono);
+  font-size: 10.5px;
+  color: var(--lp-accent-chartreuse);
+  background: rgba(204, 255, 0, 0.08);
+  border: 1px solid rgba(204, 255, 0, 0.2);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.lp-status-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--lp-accent-chartreuse);
+  border-radius: 50%;
+  animation: lpPulse 2.2s infinite ease-in-out;
+}
+
+@keyframes lpPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+}
+
+.lp-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.lp-nav-link {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--lp-text-secondary);
+  text-decoration: none;
+  transition: color 0.18s ease;
+  cursor: pointer;
+}
+
+.lp-nav-link:hover {
+  color: #ffffff;
+}
+
+.lp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lp-menu-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lp-menu-btn:hover {
+  border-color: var(--lp-accent-chartreuse);
+  color: var(--lp-accent-chartreuse);
+}
+
+/* ==========================================================================
+   XOTC Chamfered Tactical Buttons (Photos 1 & 3)
+   - Top-right and bottom-left 45° chamfered cuts
+   - Top-left and bottom-right subtle rounded bevel
+   - Solid electric chartreuse (#ccff00)
+   - Heavy monospace uppercase black typography
+   ========================================================================== */
+
+.lp-btn-primary,
+.lp-btn-chamfer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--lp-accent-chartreuse);
+  color: #000000;
+  font-family: var(--lp-font-mono);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 12px 28px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  clip-path: polygon(0 8px,
+      8px 0,
+      calc(100% - 18px) 0,
+      100% 18px,
+      100% calc(100% - 8px),
+      calc(100% - 8px) 100%,
+      18px 100%,
+      0 calc(100% - 18px));
+  transition: all 0.2s ease;
+  box-shadow: none;
+  user-select: none;
+  position: relative;
+}
+
+.lp-btn-primary:hover,
+.lp-btn-chamfer:hover {
+  background: #d8ff33;
+  transform: translateY(-2px);
+  box-shadow: none;
+}
+
+.lp-btn-primary:active,
+.lp-btn-chamfer:active {
+  transform: translateY(0);
+}
+
+.lp-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(14, 18, 24, 0.9);
+  color: #ffffff;
+  font-family: var(--lp-font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 11px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  cursor: pointer;
+  text-decoration: none;
+  clip-path: polygon(0 8px,
+      8px 0,
+      calc(100% - 18px) 0,
+      100% 18px,
+      100% calc(100% - 8px),
+      calc(100% - 8px) 100%,
+      18px 100%,
+      0 calc(100% - 18px));
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.lp-btn-secondary:hover {
+  background: rgba(204, 255, 0, 0.1);
+  border-color: rgba(204, 255, 0, 0.35);
+  color: var(--lp-accent-chartreuse);
+  transform: translateY(-2px);
+}
+
+/* Button States (Photo 3 Demonstration) */
+.lp-btn-state-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.lp-btn-sublabel {
+  font-family: var(--lp-font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--lp-accent-chartreuse);
+  text-transform: uppercase;
+  padding-left: 4px;
+}
+
+/* ==========================================================================
+   Hero Section
+   ========================================================================== */
+
+.lp-hero-section {
+  padding-top: 120px;
+  padding-bottom: 70px;
+  position: relative;
+  z-index: 1;
+}
+
+.lp-hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 36px;
+  align-items: center;
+}
+
+@media (max-width: 960px) {
+  .lp-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+}
+
+.lp-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--lp-font-mono);
+  font-size: 11.5px;
+  color: var(--lp-accent-chartreuse);
+  background: rgba(204, 255, 0, 0.08);
+  border: 1px solid rgba(204, 255, 0, 0.2);
+  padding: 4px 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.lp-hero-title {
+  font-family: var(--lp-font-heading);
+  font-size: clamp(34px, 4.2vw, 54px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  margin-bottom: 18px;
+}
+
+.lp-hero-title span {
+  color: var(--lp-accent-chartreuse);
+}
+
+.lp-hero-desc {
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: var(--lp-text-secondary);
+  margin-bottom: 24px;
+  max-width: 580px;
+}
+
+/* Layman Explainer Box */
+.lp-layman-box {
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 1px solid rgba(204, 255, 0, 0.35);
+  border-radius: 0 6px 6px 0;
+  padding: 12px 16px;
+  margin-bottom: 28px;
+  font-size: 13.5px;
+  color: #cbd5e1;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.lp-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.lp-hero-mail-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--lp-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--lp-text-secondary);
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.theme-light .lp-hero-mail-indicator {
+  background: rgba(116, 46, 197, 0.05);
+  border: 1px dashed rgba(116, 46, 197, 0.25);
+  color: #581c87;
+}
+
+.lp-hero-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lp-accent-chartreuse);
+  box-shadow: 0 0 8px var(--lp-accent-chartreuse);
+  animation: pulse 2s infinite;
+}
+
+.theme-light .lp-hero-indicator-dot {
+  background: #742ec5;
+  box-shadow: 0 0 8px rgba(116, 46, 197, 0.5);
+}
+
+/* ==========================================================================
+   Hero Right: Floating 3D ASCII/Pixel-Art Rotating Mail Envelope Hero CTA
+   (No Card Box - Floats freely in air with realistic ground shadow)
+   ========================================================================== */
+.lp-floating-envelope-stage {
+  position: relative;
+  width: 100%;
+  max-width: 660px;
+  height: 520px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.lp-floating-envelope-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: transparent;
+  overflow: visible;
+}
+
+/* ==========================================================================
+   3D Rotating Pixel Art Mail Envelope & Opening Animation
+   ========================================================================== */
+
+.lp-pixel-envelope-viewport {
+  cursor: pointer;
+  perspective: 1200px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 3D Flipper & Continuous Y-Axis Rotation */
+.lp-pixel-3d-flipper {
+  width: 100%;
+  max-width: 480px;
+  height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out;
+  position: relative;
+  z-index: 2;
+}
+
+.lp-pixel-3d-spinner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: lp3DContinuousSpin 8.5s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-pixel-card-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-pixel-face-front {
+  transform: rotateY(0deg) translateZ(1px);
+}
+
+.lp-pixel-face-back {
+  transform: rotateY(180deg) translateZ(1px);
+}
+
+.lp-pixel-face-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.28));
+  transition: filter 0.25s ease;
+}
+
+.theme-dark .lp-pixel-face-img {
+  filter: drop-shadow(0 20px 38px rgba(0, 0, 0, 0.85));
+}
+
+.theme-light .lp-pixel-face-img {
+  filter: drop-shadow(0 18px 32px rgba(15, 23, 42, 0.18));
+}
+
+@keyframes lp3DContinuousSpin {
+  0% {
+    transform: rotateY(0deg) translateY(0px);
+  }
+
+  25% {
+    transform: rotateY(90deg) translateY(-8px);
+  }
+
+  50% {
+    transform: rotateY(180deg) translateY(0px);
+  }
+
+  75% {
+    transform: rotateY(270deg) translateY(-8px);
+  }
+
+  100% {
+    transform: rotateY(360deg) translateY(0px);
+  }
+}
+
+/* ==========================================================================
+   Opening Rig & Letter Gliding to Website Animation
+   ========================================================================== */
+
+.lp-pixel-open-rig {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* Layer 1: Open Back Wall & Flap pointing up */
+.lp-pixel-layer-back {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.lp-pixel-open-bg-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.25));
+}
+
+/* Layer 2: Emerging Pixel Art Letter */
+.lp-pixel-letter-carriage {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  width: 82%;
+  margin-left: -41%;
+  z-index: 2;
+  transform-origin: center center;
+  animation: lpLetterSlideUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.lp-pixel-letter-carriage.zooming {
+  animation: lpLetterZoomToWebsite 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.theme-dark .lp-pixel-letter-carriage.zooming {
+  animation: lpLetterZoomDark 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.theme-light .lp-pixel-letter-carriage.zooming {
+  animation: lpLetterZoomLight 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.lp-pixel-letter-doc {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
+}
+
+/* Layer 3: Front Pocket Lip */
+.lp-pixel-layer-pocket {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 3;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.lp-pixel-layer-pocket.fade-out {
+  opacity: 0;
+  transform: scale(0.95) translateY(10px);
+}
+
+.lp-pixel-pocket-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Letter Animations */
+@keyframes lpLetterSlideUp {
+  0% {
+    transform: translateY(60px) scale(0.88);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: translateY(-160px) scale(1.02);
+    opacity: 1;
+  }
+}
+
+@keyframes lpLetterZoomDark {
+  0% {
+    transform: translateY(-160px) scale(1.02);
+    opacity: 1;
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45));
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-140px) scale(4.8);
+    opacity: 0.95;
+    filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.85));
+  }
+}
+
+@keyframes lpLetterZoomLight {
+  0% {
+    transform: translateY(-160px) scale(1.02);
+    opacity: 1;
+    filter: drop-shadow(0 0 25px rgba(124, 58, 237, 0.45));
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-140px) scale(4.8);
+    opacity: 0.95;
+    filter: drop-shadow(0 0 80px rgba(124, 58, 237, 0.85)) brightness(1.1);
+  }
+}
+
+@keyframes lpLetterZoomToWebsite {
+  0% {
+    transform: translateY(-160px) scale(1.02);
+    opacity: 1;
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45));
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-140px) scale(4.8);
+    opacity: 0.95;
+    filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.85));
+  }
+}
+
+.lp-pixel-open-rig.zooming .lp-pixel-layer-back {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+.shadow-opening {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  opacity: 0.2;
+  transform: scale(0.75);
+}
+
+/* Ground Floating Dynamic Drop Shadow */
+.lp-envelope-floating-shadow {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  width: 440px;
+  max-width: 82%;
+  height: 44px;
+  margin-left: -220px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  transform-origin: center center;
+  transition: transform 0.08s ease-out, opacity 0.08s ease-out;
+}
+
+.theme-dark .lp-envelope-floating-shadow {
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.55) 45%, transparent 75%);
+  filter: blur(14px);
+}
+
+.theme-light .lp-envelope-floating-shadow {
+  background: radial-gradient(ellipse at center, rgba(88, 28, 135, 0.45) 0%, rgba(116, 46, 197, 0.18) 45%, transparent 75%);
+  filter: blur(14px);
+}
+
+/* Semantic & Accessible Button Overlay */
+.lp-envelope-accessible-btn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  z-index: 5;
+}
+
+.lp-envelope-accessible-btn:focus-visible {
+  opacity: 1;
+  background: rgba(200, 255, 0, 0.08);
+  border: 2px dashed var(--lp-accent-chartreuse);
+  border-radius: 12px;
+  color: var(--lp-text-primary);
+  font-family: var(--lp-font-mono);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-light .lp-envelope-accessible-btn:focus-visible {
+  background: rgba(116, 46, 197, 0.08);
+  border: 2px dashed #742ec5;
+}
+
+/* ==========================================================================
+   'Get Started' Text Directly ON Bottom of Mail (No Button, Pure Text)
+   ========================================================================== */
+.lp-pixel-mail-get-started.on-mail {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--lp-font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  user-select: none;
+  z-index: 10;
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  margin: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.25s ease, filter 0.2s ease;
+}
+
+.theme-dark .lp-pixel-mail-get-started.on-mail {
+  color: #cbff00;
+  text-shadow:
+    -1px -1px 0 #060606,
+    1px -1px 0 #060606,
+    -1px 1px 0 #060606,
+    1px 1px 0 #060606,
+    0 2px 4px rgba(0, 0, 0, 0.95);
+}
+
+.theme-light .lp-pixel-mail-get-started.on-mail {
+  color: #742ec5;
+  text-shadow:
+    -1px -1px 0 rgba(255, 255, 255, 0.95),
+    1px -1px 0 rgba(255, 255, 255, 0.95),
+    -1px 1px 0 rgba(255, 255, 255, 0.95),
+    1px 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 4px rgba(116, 46, 197, 0.35);
+}
+
+.lp-pixel-envelope-viewport:hover .lp-pixel-mail-get-started.on-mail {
+  filter: brightness(1.25);
+}
+
+.lp-pixel-mail-arrow {
+  display: inline-block;
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.lp-pixel-envelope-viewport:hover .lp-pixel-mail-arrow {
+  transform: translateX(4px);
+}
+
+@media (max-width: 960px) {
+  .lp-floating-envelope-stage {
+    height: 440px;
+    max-width: 560px;
+  }
+}
+
+@media (max-width: 640px) {
+  .lp-floating-envelope-stage {
+    height: 360px;
+    max-width: 100%;
+  }
+
+  .lp-envelope-floating-shadow {
+    width: 300px;
+    margin-left: -150px;
+    height: 32px;
+    bottom: 14px;
+  }
+}
+
+/* ==========================================================================
+   3D ASCII Envelope Floating Stage & Matte Canvas Styles
+   - Dark Mode: Zero shadow effect, clean matte look
+   - Light Mode: Soft purple ground shadow, matte highlighted purple body
+   ========================================================================== */
+
+.theme-dark .lp-envelope-floating-shadow {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.theme-dark .lp-floating-envelope-stage,
+.theme-dark .lp-floating-envelope-viewport,
+.theme-dark .lp-ascii-canvas {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.theme-light .lp-floating-envelope-stage,
+.theme-light .lp-floating-envelope-viewport,
+.theme-light .lp-ascii-canvas {
+  filter: none !important;
+}
+
+.lp-ascii-canvas {
+  image-rendering: pixelated;
+  will-change: transform;
+}
+
+/* Hero Right: 3D Holographic Interactive Radar Scanner Graphic */
+.lp-hero-radar-card {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  transition: all 0.2s ease;
+}
+
+.lp-hero-radar-card:hover {
+  border: none;
+  box-shadow: none;
+}
+
+.lp-radar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Radar Scope Viewport */
+.lp-radar-visual-wrap {
+  position: relative;
+  height: 270px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  background: radial-gradient(circle at 50% 50%, rgba(204, 255, 0, 0.04) 0%, rgba(5, 8, 12, 0.9) 80%);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(204, 255, 0, 0.15);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.85);
+}
+
+/* Background Crosshair Grid Lines */
+.lp-radar-grid-line-h {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(204, 255, 0, 0.2) 25%, rgba(204, 255, 0, 0.35) 50%, rgba(204, 255, 0, 0.2) 75%, transparent 100%);
+}
+
+.lp-radar-grid-line-v {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent 0%, rgba(204, 255, 0, 0.2) 25%, rgba(204, 255, 0, 0.35) 50%, rgba(204, 255, 0, 0.2) 75%, transparent 100%);
+}
+
+/* Diagonal Crosshairs */
+.lp-radar-grid-line-d1 {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  top: 50%;
+  left: 0;
+  background: rgba(255, 255, 255, 0.05);
+  transform: rotate(45deg);
+}
+
+.lp-radar-grid-line-d2 {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  top: 50%;
+  left: 0;
+  background: rgba(255, 255, 255, 0.05);
+  transform: rotate(-45deg);
+}
+
+/* Concentric Rings */
+.lp-radar-ring-outer {
+  position: absolute;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  border: 1px solid rgba(204, 255, 0, 0.2);
+  box-shadow: none;
+}
+
+.lp-radar-ring-middle {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 1px dashed rgba(204, 255, 0, 0.18);
+}
+
+.lp-radar-ring-inner {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 1px solid rgba(204, 255, 0, 0.22);
+}
+
+/* Compass Coordinate Labels */
+.lp-radar-coord {
+  position: absolute;
+  font-family: var(--lp-font-mono);
+  font-size: 9px;
+  color: rgba(204, 255, 0, 0.6);
+  letter-spacing: 0.05em;
+}
+
+.lp-radar-coord-n {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.lp-radar-coord-s {
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.lp-radar-coord-w {
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.lp-radar-coord-e {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* 360° Rotating Radar Beam with Phosphor Fade */
+.lp-radar-beam-wrap {
+  position: absolute;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  animation: lpRadarSpin 5s linear infinite;
+  pointer-events: none;
+}
+
+.lp-radar-beam-cone {
+  width: 115px;
+  height: 115px;
+  position: absolute;
+  top: 0;
+  left: 115px;
+  transform-origin: bottom left;
+  background: conic-gradient(from 0deg at 0% 100%, rgba(204, 255, 0, 0.35) 0deg, rgba(204, 255, 0, 0.08) 35deg, transparent 65deg);
+}
+
+/* 3D Gyroscopic Center Core */
+.lp-radar-gyro-hub {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(8, 12, 16, 0.95);
+  border: 1px solid var(--lp-accent-chartreuse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lp-accent-chartreuse);
+  box-shadow: none;
+  z-index: 10;
+}
+
+.lp-radar-gyro-ring-1 {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px dotted rgba(204, 255, 0, 0.5);
+  animation: lpGyro1 6s linear infinite;
+}
+
+.lp-radar-gyro-ring-2 {
+  position: absolute;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 229, 255, 0.4);
+  animation: lpGyro2 8s linear infinite reverse;
+}
+
+@keyframes lpGyro1 {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lpGyro2 {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Detected Target Blips (Interactive & Catchy!) */
+.lp-radar-blip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 8;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.lp-radar-blip:hover {
+  transform: scale(1.12);
+}
+
+.lp-blip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.lp-blip-dot.safe {
+  background: var(--lp-accent-chartreuse);
+  box-shadow: none;
+}
+
+.lp-blip-dot.pqc {
+  background: var(--lp-accent-cyan);
+  box-shadow: none;
+}
+
+.lp-blip-dot.alert {
+  background: var(--lp-accent-coral);
+  box-shadow: none;
+}
+
+.lp-blip-pulse {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  animation: lpBlipWave 2s infinite ease-out;
+  pointer-events: none;
+}
+
+@keyframes lpBlipWave {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.lp-blip-label {
+  font-family: var(--lp-font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(6, 10, 14, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.lp-blip-label.safe {
+  color: var(--lp-accent-chartreuse);
+  border-color: rgba(204, 255, 0, 0.3);
+}
+
+.lp-blip-label.pqc {
+  color: var(--lp-accent-cyan);
+  border-color: rgba(0, 229, 255, 0.3);
+}
+
+.lp-blip-label.alert {
+  color: var(--lp-accent-coral);
+  border-color: rgba(255, 89, 94, 0.3);
+}
+
+/* Live Oscilloscope / Equalizer Waveform */
+.lp-radar-wave-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.lp-wave-col {
+  width: 3px;
+  background: var(--lp-accent-chartreuse);
+  border-radius: 1.5px;
+  opacity: 0.75;
+  transition: height 0.15s ease;
+}
+
+.lp-wave-title {
+  font-family: var(--lp-font-mono);
+  font-size: 10px;
+  color: var(--lp-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lp-radar-beam {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  top: 50%;
+  left: 50%;
+  transform-origin: top left;
+  background: conic-gradient(from 0deg, rgba(204, 255, 0, 0.28) 0deg, transparent 55deg);
+  border-radius: 0 0 100px 0;
+  animation: lpRadarSpin 4.5s linear infinite;
+}
+
+@keyframes lpRadarSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lp-radar-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.lp-radar-metric {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.lp-radar-metric-label {
+  font-family: var(--lp-font-mono);
+  font-size: 10px;
+  color: var(--lp-text-muted);
+}
+
+.lp-radar-metric-val {
+  font-family: var(--lp-font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Compliance Standards Banner
+   ========================================================================== */
+
+.lp-standards-section {
+  padding: 24px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(9, 12, 16, 0.5);
+}
+
+.lp-standards-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.lp-standards-title {
+  font-family: var(--lp-font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lp-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-standard-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--lp-font-mono);
+  font-size: 11.5px;
+  color: var(--lp-text-secondary);
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.lp-standard-item:hover {
+  border-color: var(--lp-accent-chartreuse);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Sections Common Layout
+   ========================================================================== */
+
+.lp-section {
+  padding: 85px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.lp-section-header {
+  margin-bottom: 44px;
+}
+
+.lp-section-header.center {
+  text-align: center;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.lp-pretitle {
+  font-family: var(--lp-font-mono);
+  font-size: 11px;
+  color: var(--lp-accent-chartreuse);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lp-section-header.center .lp-pretitle {
+  justify-content: center;
+}
+
+.lp-title {
+  font-family: var(--lp-font-heading);
+  font-size: clamp(26px, 3.2vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.lp-title span {
+  color: var(--lp-accent-chartreuse);
+}
+
+.lp-desc {
+  font-size: 15.5px;
+  color: var(--lp-text-secondary);
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   How It Works — XOTC Flow-State S-Curve Serpentine Circuit (Photo 2)
+   - 4 Feature cards at top with chartreuse icon boxes
+   - Tactical banner: "SecureMailScope solves these issues..."
+   - Serpentine 3-Row glowing circuit track connecting 8 process nodes
+   - Scroll-driven flow state: line draws and nodes render sequentially
+   ========================================================================== */
+
+.lp-circuit-feature-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 38px;
+}
+
+@media (max-width: 960px) {
+  .lp-circuit-feature-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 580px) {
+  .lp-circuit-feature-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lp-circuit-banner {
+  text-align: center;
+  max-width: 820px;
+  margin: 0 auto 54px auto;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--lp-text-secondary);
+}
+
+.lp-circuit-banner strong {
+  color: #ffffff;
+}
+
+/* Serpentine Circuit Track Viewport */
+.lp-circuit-container {
+  position: relative;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 30px 10px 50px 10px;
+}
+
+/* SVG Line Track Overlay */
+.lp-circuit-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.lp-circuit-bg-path {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+  fill: none;
+}
+
+.lp-circuit-active-path {
+  stroke: var(--lp-accent-chartreuse);
+  stroke-width: 1.2;
+  fill: none;
+  filter: none;
+  stroke-linecap: round;
+}
+
+/* 3-Row Grid for Nodes */
+.lp-circuit-rows-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 75px;
+}
+
+.lp-circuit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  position: relative;
+}
+
+.lp-circuit-row.row-reverse {
+  flex-direction: row-reverse;
+}
+
+/* Process Node Element */
+.lp-circuit-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  width: 180px;
+}
+
+.lp-node-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #090d12;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  z-index: 3;
+  transition: all 0.2s ease;
+  box-shadow: none;
+}
+
+.lp-node-circle.completed {
+  border-color: rgba(204, 255, 0, 0.4);
+  color: var(--lp-accent-chartreuse);
+  box-shadow: none;
+}
+
+.lp-node-circle.completed svg {
+  color: var(--lp-accent-chartreuse);
+}
+
+.lp-node-circle.active {
+  border-color: var(--lp-accent-chartreuse);
+  background: var(--lp-accent-chartreuse);
+  color: #000000;
+  box-shadow: none;
+}
+
+.lp-node-circle.pending {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.4);
+  box-shadow: none;
+}
+
+.lp-node-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.lp-node-title {
+  margin-top: 14px;
+  font-family: var(--lp-font-heading);
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.lp-node-subtitle {
+  margin-top: 4px;
+  font-family: var(--lp-font-mono);
+  font-size: 11px;
+  color: var(--lp-text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* Vehicle / Capsule Asset Slot above Node 4 */
+.lp-vehicle-slot {
+  position: absolute;
+  top: -44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: #0d1218;
+  border: 1px solid rgba(204, 255, 0, 0.35);
+  border-radius: 9999px;
+  box-shadow: none;
+  animation: lpVehicleFloat 3s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+@keyframes lpVehicleFloat {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.lp-vehicle-slot-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lp-accent-chartreuse);
+  animation: lpPulse 1.8s infinite;
+}
+
+.lp-vehicle-slot-text {
+  font-family: var(--lp-font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--lp-accent-chartreuse);
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 820px) {
+  .lp-circuit-svg {
+    display: none;
+  }
+
+  .lp-circuit-rows-wrap {
+    gap: 32px;
+  }
+
+  .lp-circuit-row {
+    flex-direction: column !important;
+    gap: 26px;
+  }
+
+  .lp-circuit-node {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+/* ==========================================================================
+   Animated "How PQC Works" Interactive Component
+   ========================================================================== */
+
+.lp-pqc-visualizer-card {
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+}
+
+.lp-pqc-visualizer-card .lp-card-xotc-inner {
+  padding: 32px;
+}
+
+.lp-pqc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .lp-pqc-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lp-pqc-diagram-wrap {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 24px;
+  position: relative;
+}
+
+.lp-pqc-flow-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.lp-pqc-node-box {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 14px;
+  border-radius: 6px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.lp-pqc-node-box.highlight {
+  border-color: var(--lp-accent-chartreuse);
+  background: rgba(204, 255, 0, 0.08);
+}
+
+.lp-pqc-node-label {
+  font-family: var(--lp-font-mono);
+  font-size: 10px;
+  color: var(--lp-text-muted);
+}
+
+.lp-pqc-node-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.lp-pqc-arrow-path {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 10px;
+  position: relative;
+}
+
+.lp-pqc-arrow-pulse {
+  position: absolute;
+  top: -2px;
+  height: 6px;
+  width: 24px;
+  border-radius: 3px;
+  background: var(--lp-accent-chartreuse);
+  animation: lpPulseTravel 2.4s infinite linear;
+}
+
+@keyframes lpPulseTravel {
+  0% {
+    left: 0%;
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    left: calc(100% - 24px);
+    opacity: 0;
+  }
+}
+
+/* Toggle for PQC Attack vs Defense */
+.lp-pqc-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.lp-pqc-tab-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--lp-text-secondary);
+  font-size: 12px;
+  font-family: var(--lp-font-mono);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.lp-pqc-tab-btn.active {
+  background: rgba(204, 255, 0, 0.12);
+  border-color: var(--lp-accent-chartreuse);
+  color: var(--lp-accent-chartreuse);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Product Modules (9 Capabilities)
+   ========================================================================== */
+
+.lp-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.lp-feature-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.lp-card-top {
+  margin-bottom: 16px;
+}
+
+.lp-card-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  background: rgba(204, 255, 0, 0.1);
+  border: 1px solid rgba(204, 255, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lp-accent-chartreuse);
+  margin-bottom: 14px;
+}
+
+.lp-card-tag {
+  font-family: var(--lp-font-mono);
+  font-size: 10px;
+  color: var(--lp-text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.lp-card-heading {
+  font-family: var(--lp-font-heading);
+  font-size: 17px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.lp-card-desc {
+  font-size: 13.5px;
+  color: var(--lp-text-secondary);
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+
+.lp-card-usecase {
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 1px solid rgba(204, 255, 0, 0.35);
+  padding: 8px 12px;
+  border-radius: 0 4px 4px 0;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.lp-card-usecase strong {
+  color: var(--lp-accent-chartreuse);
+  font-family: var(--lp-font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* ==========================================================================
+   Interactive Live Forensics Preview Terminal
+   ========================================================================== */
+
+.lp-terminal-card {
+  border-radius: 0;
+  border: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.lp-terminal-bar {
+  background: rgba(10, 13, 17, 0.85);
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lp-terminal-body {
+  padding: 26px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+}
+
+@media (max-width: 800px) {
+  .lp-terminal-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lp-sim-switch-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.lp-sim-btn {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--lp-text-secondary);
+  font-size: 12px;
+  font-family: var(--lp-font-mono);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.lp-sim-btn.active {
+  background: rgba(204, 255, 0, 0.12);
+  border-color: var(--lp-accent-chartreuse);
+  color: var(--lp-accent-chartreuse);
+  font-weight: 600;
+}
+
+.lp-sim-result-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.lp-data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.lp-data-tile {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 10px 12px;
+  border-radius: 4px;
+}
+
+.lp-data-label {
+  font-family: var(--lp-font-mono);
+  font-size: 10px;
+  color: var(--lp-text-muted);
+}
+
+.lp-data-value {
+  font-family: var(--lp-font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.lp-data-value.danger {
+  color: var(--lp-accent-coral);
+}
+
+.lp-data-value.safe {
+  color: var(--lp-accent-chartreuse);
+}
+
+/* ==========================================================================
+   Trust / Regulatory Cards
+   ========================================================================== */
+
+.lp-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 860px) {
+  .lp-trust-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lp-trust-card {
+  padding: 0;
+  border: none;
+}
+
+.lp-trust-title {
+  font-family: var(--lp-font-heading);
+  font-size: 17px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.lp-trust-desc {
+  font-size: 13px;
+  color: var(--lp-text-secondary);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+
+.lp-trust-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.lp-trust-list li {
+  font-size: 12px;
+  color: #cbd5e1;
+  font-family: var(--lp-font-mono);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-trust-list li::before {
+  content: '▸';
+  color: var(--lp-accent-chartreuse);
+}
+
+/* ==========================================================================
+   Final CTA
+   ========================================================================== */
+
+.lp-final-cta-card {
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  text-align: center;
+}
+
+.lp-final-cta-title {
+  font-family: var(--lp-font-heading);
+  font-size: clamp(26px, 3.4vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin-bottom: 14px;
+}
+
+.lp-final-cta-title span {
+  color: var(--lp-accent-chartreuse);
+}
+
+.lp-final-cta-desc {
+  font-size: 16px;
+  color: var(--lp-text-secondary);
+  max-width: 600px;
+  margin: 0 auto 28px;
+  line-height: 1.6;
+}
+
+.lp-guarantee-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+  font-family: var(--lp-font-mono);
+  font-size: 11px;
+  color: var(--lp-accent-chartreuse);
+}
+
+/* ==========================================================================
+   Slide-out Drawer
+   ========================================================================== */
+
+.lp-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.lp-drawer-panel {
+  width: 100%;
+  max-width: 380px;
+  height: 100%;
+  background: #090d12;
+  border-left: 1px solid var(--lp-accent-chartreuse);
+  padding: 30px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.85);
+  position: relative;
+}
+
+.lp-drawer-tab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(204, 255, 0, 0.25);
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+}
+
+.lp-drawer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 30px 0;
+}
+
+.lp-drawer-link {
+  font-family: var(--lp-font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+
+.lp-drawer-link:hover {
+  color: var(--lp-accent-chartreuse);
+  padding-left: 8px;
+  border-bottom-color: var(--lp-accent-chartreuse);
+}
+
+/* Return to Landing Pill (Rendered inside the product app) */
+.lp-return-pill {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  z-index: 9999;
+  background: #090d12;
+  border: 1px solid var(--lp-accent-chartreuse);
+  color: var(--lp-accent-chartreuse);
+  font-family: var(--lp-font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.2s ease;
+}
+
+.lp-return-pill:hover {
+  background: var(--lp-accent-chartreuse);
+  color: #000000;
+}
+
+/* Footer */
+.lp-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(6, 8, 10, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 32px 0;
+  font-family: var(--lp-font-mono);
+  font-size: 11px;
+  color: var(--lp-text-muted);
+  position: relative;
+  z-index: 1;
+}
+
+.lp-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.lp-section-alt {
+  background: rgba(10, 14, 18, 0.6);
+}
+
+.lp-pqc-layer-pill {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ==========================================================================
+   Theme Switcher Toggle Button in Header
+   ========================================================================== */
+
+.lp-theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-family: var(--lp-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.lp-theme-toggle-btn:hover {
+  border-color: var(--lp-accent-chartreuse);
+  color: var(--lp-accent-chartreuse);
+  background: var(--lp-accent-chartreuse-dim);
+}
+
+/* ==========================================================================
+   Light Mode Theme System (Black Panther Vibranium Purple & Pure White Canvas)
+   - Background: Pure crisp white (#ffffff)
+   - Main Highlighted Text & Primary Accents: Black Panther Vibranium Purple (#742ec5)
+   - Chassis Line-Art: Crisp dark graphite & vibranium purple busways from reference image
+   - Typography: High-contrast crisp charcoal (#111827 / #1f2937)
+   ========================================================================== */
+
+.landing-page-root.theme-light {
+  background-color: #ffffff;
+  color: #111827;
+
+  --lp-bg-void: #ffffff;
+  --lp-bg-canvas: #ffffff;
+  --lp-bg-frame: #f8fafc;
+
+  /* Translucent Frosted White Cards */
+  --lp-card-bg: rgba(255, 255, 255, 0.86);
+  --lp-card-hover-bg: rgba(255, 255, 255, 0.96);
+  --lp-card-border: rgba(0, 0, 0, 0.08);
+  --lp-card-border-hover: rgba(116, 46, 197, 0.4);
+
+  /* Primary Accent: Black Panther Vibranium Purple (#742ec5) */
+  --lp-accent-chartreuse: #742ec5;
+  --lp-accent-chartreuse-hover: #5c1fa5;
+  --lp-accent-chartreuse-dim: rgba(116, 46, 197, 0.08);
+  --lp-accent-chartreuse-text: #ffffff;
+
+  /* Tactical Accents */
+  --lp-accent-olive: #e2e8f0;
+  --lp-accent-cyan: #0284c7;
+  --lp-accent-emerald: #059669;
+  --lp-accent-coral: #e11d48;
+  --lp-accent-amber: #d97706;
+
+  /* Typography */
+  --lp-text-primary: #111827;
+  --lp-text-secondary: #4b5563;
+  --lp-text-muted: #6b7280;
+  --lp-text-dim: #9ca3af;
+}
+
+/* Light Mode Background Chassis (New Diagonal Cyber Circuit Artwork - 10% Opacity) */
+.theme-light .lp-mecha-canvas-bg {
+  background-image: url('/light-mecha-pattern.png');
+  background-repeat: repeat;
+  background-position: center top;
+  background-size: 960px auto;
+  opacity: 0.10;
+}
+
+.theme-light .lp-mecha-flank-left,
+.theme-light .lp-mecha-flank-right {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .theme-light .lp-mecha-full-mobile {
+    display: none;
+  }
+}
+
+.theme-light .lp-mecha-vignette-layer {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(116, 46, 197, 0.03) 0%, transparent 45%);
+}
+
+.theme-light .lp-mecha-grid-layer {
+  display: none;
+}
+
+/* Light Mode Header & Nav */
+.theme-light .lp-header {
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-brand-text {
+  color: #111827;
+}
+
+.theme-light .lp-brand-logo-icon {
+  background: #742ec5;
+  color: #ffffff;
+}
+
+.theme-light .lp-status-pill {
+  background: rgba(116, 46, 197, 0.06);
+  border: 1px solid rgba(116, 46, 197, 0.2);
+  color: #742ec5;
+}
+
+.theme-light .lp-status-dot {
+  background: #742ec5;
+}
+
+.theme-light .lp-nav-link {
+  color: #4b5563;
+}
+
+.theme-light .lp-nav-link:hover {
+  color: #742ec5;
+}
+
+.theme-light .lp-theme-toggle-btn {
+  background: rgba(116, 46, 197, 0.08);
+  border: 1px solid rgba(116, 46, 197, 0.22);
+  color: #742ec5;
+}
+
+.theme-light .lp-theme-toggle-btn:hover {
+  background: #742ec5;
+  color: #ffffff;
+}
+
+.theme-light .lp-menu-btn {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #111827;
+}
+
+.theme-light .lp-menu-btn:hover {
+  border-color: #742ec5;
+  color: #742ec5;
+}
+
+/* Light Mode Highlighted Text & Headings */
+.theme-light .lp-hero-title {
+  color: #111827;
+}
+
+.theme-light .lp-hero-title span {
+  color: #742ec5;
+}
+
+.theme-light .lp-hero-desc {
+  color: #4b5563;
+}
+
+.theme-light .lp-badge-tag {
+  background: rgba(116, 46, 197, 0.08);
+  border: 1px solid rgba(116, 46, 197, 0.22);
+  color: #742ec5;
+}
+
+.theme-light .lp-layman-box {
+  background: rgba(116, 46, 197, 0.04);
+  border-left: 1px solid #742ec5;
+  color: #374151;
+}
+
+.theme-light .lp-pretitle {
+  color: #742ec5;
+}
+
+.theme-light .lp-title {
+  color: #111827;
+}
+
+.theme-light .lp-title span,
+.theme-light .lp-final-cta-title span {
+  color: #742ec5;
+}
+
+.theme-light .lp-desc {
+  color: #4b5563;
+}
+
+/* Light Mode Cards */
+.theme-light .lp-card-xotc {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-card-xotc:hover {
+  background: rgba(116, 46, 197, 0.35);
+}
+
+.theme-light .lp-card-xotc-inner {
+  background: rgba(255, 255, 255, 0.90);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.theme-light .lp-card-tab {
+  color: #742ec5;
+  background: rgba(116, 46, 197, 0.07);
+  border: 1px solid rgba(116, 46, 197, 0.2);
+}
+
+.theme-light .lp-icon-box-xotc {
+  background: #742ec5;
+  color: #ffffff;
+}
+
+.theme-light .lp-dot-matrix .lp-dot {
+  background: #742ec5;
+}
+
+.theme-light .lp-card-heading {
+  color: #111827;
+}
+
+.theme-light .lp-card-desc {
+  color: #4b5563;
+}
+
+.theme-light .lp-card-usecase {
+  background: rgba(0, 0, 0, 0.03);
+  border-left: 1px solid #742ec5;
+  color: #374151;
+}
+
+.theme-light .lp-card-usecase strong {
+  color: #742ec5;
+}
+
+.theme-light .lp-corner-mark {
+  border-color: rgba(116, 46, 197, 0.4);
+}
+
+.theme-light .lp-empty-media-slot {
+  border: 1px dashed rgba(116, 46, 197, 0.25);
+  background: radial-gradient(circle at 50% 50%, rgba(116, 46, 197, 0.02) 0%, rgba(245, 247, 250, 0.8) 100%);
+}
+
+.theme-light .lp-empty-media-badge {
+  color: #742ec5;
+  background: rgba(116, 46, 197, 0.08);
+  border: 1px solid rgba(116, 46, 197, 0.2);
+}
+
+.theme-light .lp-empty-media-sub {
+  color: #6b7280;
+}
+
+/* Light Mode Buttons */
+.theme-light .lp-btn-primary,
+.theme-light .lp-btn-chamfer {
+  background: #742ec5;
+  color: #ffffff;
+}
+
+.theme-light .lp-btn-primary:hover,
+.theme-light .lp-btn-chamfer:hover {
+  background: #5c1fa5;
+}
+
+.theme-light .lp-btn-secondary {
+  background: rgba(255, 255, 255, 0.92);
+  color: #111827;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.theme-light .lp-btn-secondary:hover {
+  background: rgba(116, 46, 197, 0.08);
+  border-color: #742ec5;
+  color: #742ec5;
+}
+
+/* ==========================================================================
+   Light Mode Forensic Wire Radar Scope (Clean Bright Theme with BP Purple)
+   ========================================================================== */
+
+.theme-light .lp-hero-radar-card .lp-card-xotc-inner {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-radar-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-radar-header span {
+  color: #111827;
+}
+
+.theme-light .lp-radar-pulse-dot {
+  background: #742ec5;
+  box-shadow: 0 0 8px rgba(116, 46, 197, 0.45);
+}
+
+/* 3D Radar Viewport */
+.theme-light .lp-radar-visual-wrap {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(116, 46, 197, 0.05) 0%, rgba(255, 255, 255, 0.96) 55%, #f4f6fa 100%);
+  border: 1px solid rgba(116, 46, 197, 0.22);
+  box-shadow: inset 0 0 24px rgba(116, 46, 197, 0.06), 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+/* Crosshairs & Grid Lines */
+.theme-light .lp-radar-grid-line-h {
+  background: linear-gradient(90deg, transparent 0%, rgba(116, 46, 197, 0.15) 25%, rgba(116, 46, 197, 0.4) 50%, rgba(116, 46, 197, 0.15) 75%, transparent 100%);
+}
+
+.theme-light .lp-radar-grid-line-v {
+  background: linear-gradient(180deg, transparent 0%, rgba(116, 46, 197, 0.15) 25%, rgba(116, 46, 197, 0.4) 50%, rgba(116, 46, 197, 0.15) 75%, transparent 100%);
+}
+
+.theme-light .lp-radar-grid-line-d1,
+.theme-light .lp-radar-grid-line-d2 {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Concentric Rings */
+.theme-light .lp-radar-ring-outer {
+  border: 1px solid rgba(116, 46, 197, 0.26);
+  box-shadow: 0 0 10px rgba(116, 46, 197, 0.06);
+}
+
+.theme-light .lp-radar-ring-middle {
+  border: 1px dashed rgba(116, 46, 197, 0.22);
+}
+
+.theme-light .lp-radar-ring-inner {
+  border: 1px solid rgba(116, 46, 197, 0.3);
+}
+
+/* Compass Coordinate Labels */
+.theme-light .lp-radar-coord {
+  color: #742ec5;
+  font-weight: 600;
+  text-shadow: 0 0 4px #ffffff, 0 0 6px #ffffff;
+}
+
+/* Rotating Radar Beam & Sweep Cone */
+.theme-light .lp-radar-beam-cone {
+  background: conic-gradient(from 0deg at 0% 100%, rgba(116, 46, 197, 0.28) 0deg, rgba(116, 46, 197, 0.06) 35deg, transparent 65deg);
+}
+
+.theme-light .lp-radar-beam {
+  background: conic-gradient(from 0deg, rgba(116, 46, 197, 0.25) 0deg, transparent 55deg);
+}
+
+/* 3D Gyroscopic Center Core Hub */
+.theme-light .lp-radar-gyro-hub {
+  background: #ffffff;
+  border: 1.5px solid #742ec5;
+  color: #742ec5;
+  box-shadow: 0 2px 10px rgba(116, 46, 197, 0.2), 0 0 0 3px rgba(255, 255, 255, 0.8);
+}
+
+.theme-light .lp-radar-gyro-ring-1 {
+  border: 1px dotted rgba(116, 46, 197, 0.45);
+}
+
+.theme-light .lp-radar-gyro-ring-2 {
+  border: 1px dashed rgba(2, 132, 199, 0.45);
+}
+
+/* Detected Target Blip Dots */
+.theme-light .lp-blip-dot.safe {
+  background: #059669;
+}
+
+.theme-light .lp-blip-dot.pqc {
+  background: #742ec5;
+}
+
+.theme-light .lp-blip-dot.alert {
+  background: #e11d48;
+}
+
+.theme-light .lp-blip-pulse {
+  border-color: currentColor;
+}
+
+/* Target Blip Callout Labels (Crisp Bright White Cards with Color Accents) */
+.theme-light .lp-blip-label {
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.theme-light .lp-blip-label.safe {
+  color: #047857;
+  background: #f0fdf4;
+  border: 1px solid rgba(5, 150, 105, 0.35);
+}
+
+.theme-light .lp-blip-label.pqc {
+  color: #742ec5;
+  background: #faf5ff;
+  border: 1px solid rgba(116, 46, 197, 0.35);
+}
+
+.theme-light .lp-blip-label.alert {
+  color: #be123c;
+  background: #fff1f2;
+  border: 1px solid rgba(225, 29, 72, 0.35);
+}
+
+/* Live Oscilloscope / Equalizer Waveform */
+.theme-light .lp-radar-wave-bar {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.theme-light .lp-wave-title {
+  color: #4b5563;
+}
+
+.theme-light .lp-wave-col {
+  background: #742ec5;
+  opacity: 0.85;
+}
+
+/* Telemetry Metrics Grid */
+.theme-light .lp-radar-metrics-grid {
+  gap: 10px;
+}
+
+.theme-light .lp-radar-metric {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.theme-light .lp-radar-metric-label {
+  color: #6b7280;
+}
+
+.theme-light .lp-radar-metric-val {
+  color: #111827;
+}
+
+/* Light Mode Serpentine Circuit */
+.theme-light .lp-circuit-banner {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #4b5563;
+}
+
+.theme-light .lp-circuit-banner strong {
+  color: #742ec5;
+}
+
+.theme-light .lp-circuit-bg-path {
+  stroke: rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-circuit-active-path {
+  stroke: #742ec5;
+}
+
+.theme-light .lp-node-circle {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.theme-light .lp-node-circle.completed {
+  border-color: #742ec5;
+  color: #742ec5;
+}
+
+.theme-light .lp-node-circle.completed svg {
+  color: #742ec5;
+}
+
+.theme-light .lp-node-circle.active {
+  border-color: #742ec5;
+  background: #742ec5;
+  color: #ffffff;
+}
+
+.theme-light .lp-node-circle.pending {
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.theme-light .lp-node-title {
+  color: #111827;
+}
+
+.theme-light .lp-node-subtitle {
+  color: #6b7280;
+}
+
+.theme-light .lp-vehicle-slot {
+  background: #ffffff;
+  border: 1px solid #742ec5;
+  color: #742ec5;
+}
+
+.theme-light .lp-vehicle-slot-pulse {
+  background: #742ec5;
+}
+
+/* Light Mode PQC Visualizer */
+.theme-light .lp-section-alt {
+  background: rgba(245, 247, 250, 0.6);
+}
+
+.theme-light .lp-pqc-diagram-wrap {
+  background: rgba(243, 244, 246, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-pqc-tab-btn {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #4b5563;
+}
+
+.theme-light .lp-pqc-tab-btn.active {
+  background: #742ec5;
+  border-color: #742ec5;
+  color: #ffffff;
+}
+
+.theme-light .lp-pqc-layer-pill {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+
+.theme-light .lp-pqc-node-box {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-pqc-node-box.highlight {
+  border-color: #742ec5;
+}
+
+.theme-light .lp-pqc-node-label {
+  color: #6b7280;
+}
+
+.theme-light .lp-pqc-node-title {
+  color: #111827;
+}
+
+.theme-light .lp-pqc-step-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-pqc-step-num {
+  background: rgba(116, 46, 197, 0.1);
+  color: #742ec5;
+}
+
+.theme-light .lp-pqc-step-title {
+  color: #111827;
+}
+
+.theme-light .lp-pqc-step-desc {
+  color: #6b7280;
+}
+
+/* Light Mode Terminal */
+.theme-light .lp-terminal-bar {
+  background: rgba(241, 245, 249, 0.95);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-terminal-body {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.theme-light .lp-sim-btn {
+  background: #f1f5f9;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #4b5563;
+}
+
+.theme-light .lp-sim-btn.active {
+  background: #ffffff;
+  border-color: #742ec5;
+  color: #742ec5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.theme-light .lp-term-input-box {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.theme-light .lp-term-input-box input {
+  color: #111827;
+}
+
+.theme-light .lp-term-action-btn {
+  background: #742ec5;
+  color: #ffffff;
+}
+
+.theme-light .lp-term-action-btn:hover {
+  background: #5c1fa5;
+}
+
+.theme-light .lp-term-output-area {
+  background: #f8fafc;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #334155;
+}
+
+.theme-light .lp-probe-summary-banner {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-probe-summary-banner.insecure {
+  border-color: rgba(225, 29, 72, 0.3);
+  background: rgba(225, 29, 72, 0.03);
+}
+
+.theme-light .lp-probe-summary-banner.hardened {
+  border-color: rgba(116, 46, 197, 0.3);
+  background: rgba(116, 46, 197, 0.03);
+}
+
+.theme-light .lp-probe-summary-title {
+  color: #111827;
+}
+
+/* Light Mode Trust & Compliance */
+.theme-light .lp-trust-title {
+  color: #111827;
+}
+
+.theme-light .lp-trust-desc {
+  color: #4b5563;
+}
+
+.theme-light .lp-trust-list li {
+  color: #374151;
+}
+
+.theme-light .lp-trust-list li::before {
+  color: #742ec5;
+}
+
+/* Light Mode Final CTA */
+.theme-light .lp-final-cta-title {
+  color: #111827;
+}
+
+.theme-light .lp-final-cta-desc {
+  color: #4b5563;
+}
+
+.theme-light .lp-guarantee-row {
+  color: #742ec5;
+}
+
+/* Light Mode Drawer & Footer */
+.theme-light .lp-drawer-panel {
+  background: #ffffff;
+  border-left: 1px solid #742ec5;
+}
+
+.theme-light .lp-drawer-nav-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  color: #111827;
+}
+
+.theme-light .lp-drawer-nav-item:hover {
+  background: rgba(116, 46, 197, 0.06);
+  color: #742ec5;
+}
+
+.theme-light .lp-footer {
+  background: rgba(255, 255, 255, 0.9);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: #6b7280;
+}
+
+.theme-light .lp-return-pill {
+  background: #ffffff;
+  border: 1px solid #742ec5;
+  color: #742ec5;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .lp-return-pill:hover {
+  background: #742ec5;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Root Seamless View Transition Curtain & Enter Animations
+   ========================================================================== */
+
+.root-view-wrapper {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-app);
+}
+
+.root-view-wrapper.theme-dark {
+  background-color: #07090c;
+}
+
+.root-view-wrapper.theme-light {
+  background-color: #ffffff;
+}
+
+/* Cinematic Full-Screen Transition Curtain */
+.root-transition-curtain {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999999;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  will-change: opacity, transform;
+}
+
+.root-transition-curtain.theme-dark {
+  background-color: #07090c;
+}
+
+.root-transition-curtain.theme-light {
+  background-color: #ffffff;
+}
+
+.root-transition-curtain.active,
+.root-transition-curtain.phase-covering {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.root-transition-curtain.phase-uncovering {
+  opacity: 0;
+  visibility: visible;
+  pointer-events: none;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s ease;
+}
+
+/* Ambient glow orb centered on curtain */
+.root-transition-glow {
+  position: absolute;
+  width: 650px;
+  height: 650px;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  transform: scale(0.85);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+}
+
+.root-transition-curtain.theme-dark .root-transition-glow {
+  background: radial-gradient(circle, rgba(203, 255, 0, 0.22) 0%, rgba(203, 255, 0, 0.05) 50%, transparent 75%);
+}
+
+.root-transition-curtain.theme-light .root-transition-glow {
+  background: radial-gradient(circle, rgba(116, 46, 197, 0.18) 0%, rgba(116, 46, 197, 0.04) 50%, transparent 75%);
+}
+
+.root-transition-curtain.phase-covering .root-transition-glow {
+  transform: scale(1.3);
+}
+
+/* Cybernetic horizontal laser sweep beam */
+.root-transition-beam {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  opacity: 0;
+  transform: translateY(-50%) scaleX(0.15);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.root-transition-curtain.theme-dark .root-transition-beam {
+  background: linear-gradient(90deg, transparent 0%, rgba(203, 255, 0, 0.75) 50%, transparent 100%);
+  box-shadow: 0 0 16px rgba(203, 255, 0, 0.6), 0 0 32px rgba(203, 255, 0, 0.3);
+}
+
+.root-transition-curtain.theme-light .root-transition-beam {
+  background: linear-gradient(90deg, transparent 0%, rgba(116, 46, 197, 0.75) 50%, transparent 100%);
+  box-shadow: 0 0 16px rgba(116, 46, 197, 0.5), 0 0 32px rgba(116, 46, 197, 0.25);
+}
+
+.root-transition-curtain.phase-covering .root-transition-beam {
+  opacity: 1;
+  transform: translateY(-50%) scaleX(1);
+}
+
+/* Seamless view container entrance */
+.root-active-view-container {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.view-enter-smooth {
+  animation: rootEnterSmooth 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes rootEnterSmooth {
+  0% {
+    opacity: 0.82;
+    transform: translateY(12px) scale(0.996);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
