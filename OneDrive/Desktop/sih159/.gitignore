@@ -27,3 +27,8 @@ frontend/dist/
 # Output & Databases
 output/
 *.db
+
+# Large Capture Files
+*.pcap
+*.pcapng
+!deps/sample_traffic.pcap

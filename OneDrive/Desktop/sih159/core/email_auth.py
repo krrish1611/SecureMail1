@@ -317,14 +317,18 @@ def check_dmarc(domain: str) -> Dict[str, Any]:
 
 def check_dkim(domain: str, custom_selectors: Optional[List[str]] = None) -> Dict[str, Any]:
     """Probe common DKIM selectors for a domain."""
+    from concurrent.futures import ThreadPoolExecutor
+
     selectors = custom_selectors or [
         "google", "default", "selector1", "k1", "k2", "mail", "smtp",
         "s1", "s2", "dkim", "2023", "2024", "2025", "2026"
     ]
 
     discovered = []
-    for sel in selectors:
+
+    def _probe_selector(sel: str) -> List[Dict[str, Any]]:
         qname = f"{sel}._domainkey.{domain}"
+        found = []
         records = query_txt_records(qname)
         for r in records:
             if "v=dkim1" in r.lower() or "p=" in r.lower():
@@ -339,13 +343,18 @@ def check_dkim(domain: str, custom_selectors: Optional[List[str]] = None) -> Dic
                     except Exception:
                         pass
 
-                discovered.append({
+                found.append({
                     "selector": sel,
                     "record_name": qname,
                     "record_text": r[:120] + "..." if len(r) > 120 else r,
                     "key_length_bits": key_bits,
                     "is_weak": (key_bits is not None and key_bits < 2048),
                 })
+        return found
+
+    with ThreadPoolExecutor(max_workers=min(len(selectors), 10)) as executor:
+        for res_list in executor.map(_probe_selector, selectors):
+            discovered.extend(res_list)
 
     result: Dict[str, Any] = {
         "domain": domain,
@@ -406,10 +415,18 @@ def check_bimi(domain: str) -> Dict[str, Any]:
 
 def evaluate_email_auth(domain: str) -> Dict[str, Any]:
     """Compute consolidated email authentication assessment for a domain."""
-    spf_res = check_spf(domain)
-    dmarc_res = check_dmarc(domain)
-    dkim_res = check_dkim(domain)
-    bimi_res = check_bimi(domain)
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        f_spf = executor.submit(check_spf, domain)
+        f_dmarc = executor.submit(check_dmarc, domain)
+        f_dkim = executor.submit(check_dkim, domain)
+        f_bimi = executor.submit(check_bimi, domain)
+
+        spf_res = f_spf.result()
+        dmarc_res = f_dmarc.result()
+        dkim_res = f_dkim.result()
+        bimi_res = f_bimi.result()
 
     # Weighted calculation: DMARC (45%), SPF (35%), DKIM (20%)
     overall_score = round(

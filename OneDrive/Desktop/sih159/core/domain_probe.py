@@ -174,6 +174,10 @@ def probe_domain(domain: str, timeout: float = 6.0, use_ml: bool = True) -> Tupl
     """Actively probe domain MX infrastructure and generate posture session & email auth report."""
     clean_domain = domain.strip().lower().replace("https://", "").replace("http://", "").split("/")[0]
 
+    from concurrent.futures import ThreadPoolExecutor
+    auth_executor = ThreadPoolExecutor(max_workers=1)
+    auth_future = auth_executor.submit(evaluate_email_auth, clean_domain)
+
     # 1. Discover MX records
     mx_list = _resolve_mx_hosts(clean_domain)
     primary_prio, primary_host = mx_list[0]
@@ -192,9 +196,10 @@ def probe_domain(domain: str, timeout: float = 6.0, use_ml: bool = True) -> Tupl
 
     # 2. Attempt probe (Port 25 first, fallback to 587 if residential ISP blocks 25)
     probe_result = None
+    probe_timeout = min(timeout, 2.0)
     for port in [25, 587]:
         if target_ip and target_ip != "127.0.0.1":
-            probe_result = _probe_smtp_server(primary_host, target_ip, port=port, timeout=timeout)
+            probe_result = _probe_smtp_server(primary_host, target_ip, port=port, timeout=probe_timeout)
             if probe_result.get("success") or probe_result.get("starttls_advertised"):
                 break
 
@@ -325,7 +330,12 @@ def probe_domain(domain: str, timeout: float = 6.0, use_ml: bool = True) -> Tupl
         session.risk_label = "low"
 
     # 9. Evaluate Email Authentication (SPF, DMARC, DKIM, BIMI)
-    email_auth_data = evaluate_email_auth(clean_domain)
+    try:
+        email_auth_data = auth_future.result(timeout=15.0)
+    except Exception:
+        email_auth_data = evaluate_email_auth(clean_domain)
+    finally:
+        auth_executor.shutdown(wait=False)
 
     # If DMARC missing or p=none, add findings to session
     if email_auth_data.get("dmarc", {}).get("policy") == "none":
