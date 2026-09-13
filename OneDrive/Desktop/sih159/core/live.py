@@ -280,7 +280,7 @@ class LiveMonitor:
             except Exception:
                 pass
 
-        bpf = self.bpf_filter or "tcp and (port 25 or port 465 or port 587 or port 110 or port 995 or port 143 or port 993)"
+        bpf = self.bpf_filter or "tcp and (port 25 or port 465 or port 587 or port 110 or port 995 or port 143 or port 993 or port 2525 or port 1587 or port 1025 or port 1465 or port 1993 or port 1143 or port 1995 or port 1110)"
         try:
             cap = pyshark.LiveCapture(interface=self.interface, bpf_filter=bpf)
         except Exception:
@@ -370,7 +370,7 @@ class LiveMonitor:
                 pass
 
         is_loopback = str(self.interface).lower().startswith("lo") or str(self.interface).lower() in ("lo0", "127.0.0.1", "localhost")
-        bpf = self.bpf_filter or "tcp and (port 25 or port 465 or port 587 or port 110 or port 995 or port 143 or port 993)"
+        bpf = self.bpf_filter or "tcp and (port 25 or port 465 or port 587 or port 110 or port 995 or port 143 or port 993 or port 2525 or port 1587 or port 1025 or port 1465 or port 1993 or port 1143 or port 1995 or port 1110)"
         # On Darwin (macOS), loopback DLT_NULL 4-byte link-layer headers misalign raw BPF offsets; filter in user space
         kernel_bpf = None if (is_loopback and sys.platform == "darwin") else bpf
 
@@ -405,14 +405,14 @@ class LiveMonitor:
                 tcp = pkt[TCP]
                 sport = int(tcp.sport)
                 dport = int(tcp.dport)
+                payload = bytes(tcp.payload)
                 if is_loopback and sys.platform == "darwin":
-                    from core.capture import EMAIL_PORTS
-                    if sport not in EMAIL_PORTS and dport not in EMAIL_PORTS:
+                    from core.capture import ALL_EMAIL_PORTS, is_email_candidate
+                    if sport not in ALL_EMAIL_PORTS and dport not in ALL_EMAIL_PORTS and not is_email_candidate(payload, sport, dport):
                         return
 
                 ip_src = pkt[IP].src if IP in pkt else (pkt[IPv6].src if IPv6 in pkt else "127.0.0.1")
                 ip_dst = pkt[IP].dst if IP in pkt else (pkt[IPv6].dst if IPv6 in pkt else "127.0.0.1")
-                payload = bytes(tcp.payload)
                 ts = float(pkt.time) if hasattr(pkt, "time") else time.time()
                 flags_str = str(tcp.flags) if hasattr(tcp, "flags") else ""
                 self._feed_packet(ip_src, sport, ip_dst, dport, payload, ts, flags_str=flags_str)
@@ -424,6 +424,7 @@ class LiveMonitor:
                     self._report(new_sessions)
                     start_ts = now
 
+        sniff_error = None
         try:
             sniff(
                 iface=self.interface if self.interface not in ("all", "any") else None,
@@ -433,16 +434,20 @@ class LiveMonitor:
                 timeout=duration,
                 store=False,
             )
+        except Exception as e:
+            sniff_error = e
+            raise
         finally:
             self._stop_requested = True
-            try:
-                new_sessions = self.analyze_pending()
-                self._report(new_sessions)
-            except Exception:
-                pass
+            if not sniff_error:
+                try:
+                    new_sessions = self.analyze_pending()
+                    self._report(new_sessions)
+                except Exception:
+                    pass
 
         self._final_report()
-        if self.on_status:
+        if self.on_status and not sniff_error:
             try:
                 self.on_status("completed", {
                     "packet_count": self._packet_count,
@@ -558,26 +563,34 @@ class LiveMonitor:
 
     def start(self, duration: Optional[float] = None) -> None:
         """Run resilient live capture: Scapy Native (preferred for raw wire capture) -> PyShark -> Active Streamer fallback."""
-        # Preference 1: Native Scapy sniffing (direct raw socket, clean timeout handling)
-        try:
-            self._start_scapy(duration)
-            return
-        except Exception as e:
-            print(f"[!] Scapy live capture failed ({e}), attempting PyShark fallback...")
+        # Check if raw hardware BPF is accessible on macOS
+        bpf_accessible = True
+        if sys.platform == "darwin":
+            is_root = hasattr(os, "geteuid") and os.geteuid() == 0
+            bpf_ok = os.access("/dev/bpf0", os.R_OK | os.W_OK) if os.path.exists("/dev/bpf0") else False
+            bpf_accessible = is_root or bpf_ok
 
-        # Preference 2: PyShark live capture
-        has_tshark = shutil.which("tshark") is not None or (
-            sys.platform == "win32" and os.path.exists(r"C:\Program Files\Wireshark\tshark.exe")
-        )
-        if has_tshark:
+        if bpf_accessible:
+            # Preference 1: Native Scapy sniffing (direct raw socket, clean timeout handling)
             try:
-                self._start_pyshark(duration)
+                self._start_scapy(duration)
                 return
             except Exception as e:
-                print(f"[!] PyShark live capture failed ({e}), attempting active stream fallback...")
+                print(f"[!] Scapy live capture failed ({e}), attempting PyShark fallback...")
+
+            # Preference 2: PyShark live capture
+            has_tshark = shutil.which("tshark") is not None or (
+                sys.platform == "win32" and os.path.exists(r"C:\Program Files\Wireshark\tshark.exe")
+            )
+            if has_tshark:
+                try:
+                    self._start_pyshark(duration)
+                    return
+                except Exception as e:
+                    print(f"[!] PyShark live capture failed ({e}), attempting active stream fallback...")
 
         # Preference 3: Fallback to High-Fidelity Active Traffic Streamer
-        print("[!] Native raw interface capture unavailable. Switching to active stream engine.")
+        print("[!] Hardware wire capture restricted by OS permissions. Operating in High-Fidelity Active Traffic Streamer Mode.")
         if self.on_status:
             try:
                 self.on_status("notice", {

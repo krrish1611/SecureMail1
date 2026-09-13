@@ -646,16 +646,25 @@ async def generate_live_traffic_endpoint(
         try:
             srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            try:
-                srv.bind(("127.0.0.1", port))
-                bound_port = port
-            except Exception:
+            candidate_ports = [port, 2525, 1587, 1025, 25, 0]
+            for p in candidate_ports:
                 try:
-                    srv.bind(("127.0.0.1", 25))
-                    bound_port = 25
+                    srv.bind(("127.0.0.1", p))
+                    bound_port = p if p != 0 else srv.getsockname()[1]
+                    break
                 except Exception:
-                    srv.bind(("127.0.0.1", 0))
-                    bound_port = srv.getsockname()[1]
+                    try:
+                        srv.close()
+                    except Exception:
+                        pass
+                    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    continue
+
+            from core.capture import ALL_EMAIL_PORTS, SERVER_PORTS
+            ALL_EMAIL_PORTS[bound_port] = "smtp"
+            SERVER_PORTS.add(bound_port)
+
             srv.listen(5)
             srv.settimeout(8.0)
 

@@ -39,6 +39,20 @@ EMAIL_PORTS: Dict[int, str] = {
     993: "imaps",
 }
 
+# Standard unprivileged alternative/developer email ports:
+ALT_EMAIL_PORTS: Dict[int, str] = {
+    1025: "smtp",
+    1587: "submission",
+    2525: "smtp",
+    1465: "smtps",
+    1110: "pop3",
+    1995: "pop3s",
+    1143: "imap",
+    1993: "imaps",
+}
+
+ALL_EMAIL_PORTS: Dict[int, str] = {**EMAIL_PORTS, **ALT_EMAIL_PORTS}
+
 # Backward-compatible alias — keep existing call-sites (e.g. normalize_key)
 # working without changes.
 SERVER_PORTS: Set[int] = set(EMAIL_PORTS.keys())
@@ -54,7 +68,7 @@ def is_email_candidate(payload: bytes, sport: int, dport: int) -> bool:
     pattern matching against known email protocol signatures so that email
     traffic on non-standard ports is still captured.
     """
-    if sport in EMAIL_PORTS or dport in EMAIL_PORTS:
+    if sport in ALL_EMAIL_PORTS or dport in ALL_EMAIL_PORTS:
         return True
     if payload:
         # Only inspect the first 512 bytes for performance.
