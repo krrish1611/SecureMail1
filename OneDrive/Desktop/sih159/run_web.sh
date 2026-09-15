@@ -18,5 +18,18 @@ if [ ! -d "frontend/dist" ]; then
   (cd frontend && npm install && npm run build)
 fi
 
-echo "[*] Starting SecureMailScope web dashboard at http://localhost:8000"
-exec ./.venv/bin/python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+if [[ "$OSTYPE" == "darwin"* ]] && ls /dev/bpf* >/dev/null 2>&1; then
+  if [ ! -r /dev/bpf0 ] || [ ! -w /dev/bpf0 ]; then
+    echo "[*] Fixing /dev/bpf* permissions for packet capture..."
+    if ! sudo -n chmod 666 /dev/bpf* 2>/dev/null; then
+      echo "[!] Passwordless sudo not set up for this — you may be prompted for your password."
+      sudo chmod 666 /dev/bpf* || echo "[!] Could not chmod /dev/bpf*; packet capture may fail without it."
+    fi
+  else
+    echo "[✓] /dev/bpf* permissions already configured for packet capture."
+  fi
+fi
+
+PORT="${PORT:-8000}"
+echo "[*] Starting SecureMailScope web dashboard at http://localhost:$PORT"
+exec ./.venv/bin/python -m uvicorn backend.app.main:app --host 0.0.0.0 --port "$PORT" "$@"
