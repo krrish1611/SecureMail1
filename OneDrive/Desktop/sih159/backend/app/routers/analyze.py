@@ -1167,6 +1167,22 @@ async def test_webhook(req: WebhookTestRequest):
                 break
 
     if not sample_session:
+        try:
+            from core.history import get_history, get_scan
+            hist = get_history(limit=5)
+            for scan in hist:
+                loaded_scan = get_scan(scan.get("job_id"))
+                if loaded_scan and loaded_scan.get("sessions"):
+                    for s in loaded_scan["sessions"]:
+                        if any(f.severity >= min_sev for f in s.findings):
+                            sample_session = s
+                            break
+                if sample_session:
+                    break
+        except Exception:
+            pass
+
+    if not sample_session:
         sample_session = Session(
             id="test_alert_001",
             protocol="smtp",

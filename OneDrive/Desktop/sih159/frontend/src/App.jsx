@@ -370,6 +370,7 @@ export default function App({ theme: propTheme, toggleTheme: propToggleTheme }) 
   const [webhookMinSev, setWebhookMinSev] = useState('high')
   const [webhookTestResult, setWebhookTestResult] = useState(null)
   const [webhookTesting, setWebhookTesting] = useState(false)
+  const [webhookFlash, setWebhookFlash] = useState(false)
 
   // Standout Features State: Domain Probe, Executive Summary, Email Auth, Trends & History
   const [scanMode, setScanMode] = useState('pcap') // 'pcap' | 'domain'
@@ -565,25 +566,39 @@ New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProvi
     }
   }
 
-  const doTestWebhook = async (overrideProvider = null, overrideMinSev = null, overrideUrl = null) => {
+  const doTestWebhook = async (overrideProvider = null, overrideMinSev = null, overrideUrl = null, forceDryRun = false) => {
     const prov = overrideProvider || webhookProvider
     const sev = overrideMinSev || webhookMinSev
     const urlVal = overrideUrl !== null ? overrideUrl : webhookUrl
     setWebhookTesting(true)
+    const isDry = forceDryRun || !urlVal || !urlVal.trim()
+    const start = Date.now()
     try {
       const resp = await axios.post('/api/alerts/test', {
-        url: urlVal && urlVal.trim() ? urlVal.trim() : undefined,
+        url: isDry ? undefined : urlVal.trim(),
         provider: prov,
         min_severity: sev,
-        dry_run: !urlVal || !urlVal.trim(),
+        dry_run: isDry,
       })
-      setWebhookTestResult(resp.data)
+      const elapsed = Date.now() - start
+      if (elapsed < 250) {
+        await new Promise(r => setTimeout(r, 250 - elapsed))
+      }
+      setWebhookTestResult({
+        ...resp.data,
+        simulated_at: new Date().toLocaleTimeString(),
+        is_dry_run: isDry,
+      })
+      setWebhookFlash(true)
+      setTimeout(() => setWebhookFlash(false), 1500)
     } catch (e) {
       console.error('Webhook test error:', e)
       setWebhookTestResult({
         dispatched: false,
         findings_count: 0,
         payload: {},
+        simulated_at: new Date().toLocaleTimeString(),
+        is_dry_run: isDry,
         error: e.response?.data?.detail || e.message || 'Webhook dispatch request failed',
       })
     } finally {
@@ -4632,15 +4647,54 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                       </span>
                     </div>
 
-                    <div style={{ marginTop: 'auto', paddingTop: '6px' }}>
+                    <div style={{ marginTop: 'auto', paddingTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <button
                         className="btn-primary"
-                        onClick={() => doTestWebhook()}
+                        onClick={() => doTestWebhook(null, null, null, true)}
                         disabled={webhookTesting}
-                        style={{ width: '100%', padding: '8px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                        style={{
+                          width: '100%',
+                          padding: '9px 14px',
+                          fontSize: '12.5px',
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          cursor: webhookTesting ? 'not-allowed' : 'pointer',
+                        }}
                       >
-                        {webhookTesting ? 'Dispatching Test…' : webhookUrl && webhookUrl.trim() ? '🚀 Dispatch Live Webhook Test' : '⚡ Simulate Alert Payload'}
+                        {webhookTesting ? '⚡ Generating Simulation…' : '⚡ Simulate Alert Payload'}
                       </button>
+
+                      {webhookUrl && webhookUrl.trim() ? (
+                        <button
+                          className="copy-mini-btn"
+                          onClick={() => doTestWebhook(null, null, null, false)}
+                          disabled={webhookTesting}
+                          style={{
+                            width: '100%',
+                            padding: '8px 14px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            color: 'var(--text-primary)',
+                            background: 'rgba(59, 130, 246, 0.15)',
+                            border: '1px solid rgba(59, 130, 246, 0.4)',
+                            borderRadius: '4px',
+                            cursor: webhookTesting ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          🚀 Dispatch Live Webhook Test
+                        </button>
+                      ) : (
+                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.3 }}>
+                          💡 Enter a live endpoint URL above to unlock real HTTP dispatch.
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -4655,11 +4709,25 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                             fontWeight: 600,
                             padding: '2px 8px',
                             borderRadius: '10px',
-                            background: webhookTestResult.dispatched ? 'rgba(56, 168, 86, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                            color: webhookTestResult.dispatched ? 'var(--sev-safe)' : 'var(--sev-critical)',
-                            border: `1px solid ${webhookTestResult.dispatched ? 'rgba(56, 168, 86, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                            transition: 'all 0.3s ease',
+                            background: webhookFlash
+                              ? 'rgba(163, 230, 53, 0.3)'
+                              : webhookTestResult.dispatched
+                                ? 'rgba(56, 168, 86, 0.15)'
+                                : 'rgba(239, 68, 68, 0.15)',
+                            color: webhookFlash
+                              ? '#a3e635'
+                              : webhookTestResult.dispatched
+                                ? 'var(--sev-safe)'
+                                : 'var(--sev-critical)',
+                            border: `1px solid ${webhookFlash ? '#a3e635' : webhookTestResult.dispatched ? 'rgba(56, 168, 86, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
                           }}>
-                            {webhookTestResult.dispatched ? '✓ Dispatched' : '✗ Inactive'} {webhookTestResult.mode === 'dry_run' ? '(Simulated)' : ''}
+                            {webhookFlash
+                              ? '✨ Updated Just Now'
+                              : webhookTestResult.dispatched
+                                ? (webhookTestResult.mode === 'dry_run' || webhookTestResult.is_dry_run ? '✓ Simulated' : '✓ Live Dispatched')
+                                : '✗ Inactive'}
+                            {webhookTestResult.simulated_at ? ` (${webhookTestResult.simulated_at})` : ''}
                           </span>
                         )}
                       </div>
@@ -4689,7 +4757,9 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                     {/* Pre block fills the rest of the right column */}
                     <pre style={{
                       background: 'var(--bg-app)',
-                      border: '1px solid var(--border-color)',
+                      border: webhookFlash ? '1px solid #a3e635' : '1px solid var(--border-color)',
+                      boxShadow: webhookFlash ? '0 0 10px rgba(163, 230, 53, 0.35)' : 'none',
+                      transition: 'border 0.3s ease, box-shadow 0.3s ease',
                       color: 'var(--text-primary)',
                       padding: '10px 12px',
                       borderRadius: '6px',
