@@ -545,11 +545,11 @@ async def live_websocket_endpoint(websocket: WebSocket):
 
                 bpf = None
                 if protocol_filter == "smtp":
-                    bpf = "tcp and (port 25 or port 465 or port 587)"
+                    bpf = "tcp and (port 25 or port 465 or port 587 or port 2525 or port 1587 or port 1025 or port 1465)"
                 elif protocol_filter == "imap":
-                    bpf = "tcp and (port 143 or port 993)"
+                    bpf = "tcp and (port 143 or port 993 or port 1143 or port 1993)"
                 elif protocol_filter == "pop3":
-                    bpf = "tcp and (port 110 or port 995)"
+                    bpf = "tcp and (port 110 or port 995 or port 1110 or port 1995)"
 
                 active_monitor = LiveMonitor(
                     interface=interface,

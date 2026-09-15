@@ -14,11 +14,18 @@ import socket
 import struct
 import urllib.request
 import ssl
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 
 from .models import DnsSecurityInfo, Session
+
+try:
+    import dns.resolver
+    import dns.exception
+    HAS_DNS = True
+except ImportError:
+    HAS_DNS = False
 
 # Cache DNS lookups in-memory to prevent repeated network queries
 _MTA_STS_CACHE: Dict[str, Tuple[Optional[str], bool, Optional[str], Optional[str]]] = {}
@@ -26,16 +33,26 @@ _DANE_CACHE: Dict[str, List[Dict[str, Any]]] = {}
 
 
 def _build_dns_query(qname_str: str, qtype: int) -> bytes:
-    """Construct an RFC 1035 UDP DNS query packet."""
+    """Construct an RFC 1035 UDP DNS query packet with RFC 6891 EDNS0 extension."""
     tx_id = 0x7B29
     flags = 0x0100  # Standard query with recursion desired (RD=1)
-    header = struct.pack("!HHHHHH", tx_id, flags, 1, 0, 0, 0)
+    # 1 question, 0 answers, 0 authority, 1 additional (EDNS0 OPT RR)
+    header = struct.pack("!HHHHHH", tx_id, flags, 1, 0, 0, 1)
 
-    # Encode domain name labels
+    # Encode domain name labels with IDNA support
     parts = qname_str.strip(".").split(".")
-    qname = b"".join(bytes([len(p)]) + p.encode("ascii") for p in parts if p) + b"\x00"
+    encoded_parts = []
+    for p in parts:
+        if p:
+            try:
+                encoded_parts.append(p.encode("idna"))
+            except Exception:
+                encoded_parts.append(p.encode("ascii", "replace"))
+    qname = b"".join(bytes([len(p)]) + p for p in encoded_parts) + b"\x00"
     question = qname + struct.pack("!HH", qtype, 1)  # QTYPE, QCLASS=IN (1)
-    return header + question
+    # EDNS0 OPT RR: root label (0), TYPE=41 (OPT), UDP payload size=4096 (0x1000), flags=0, RDLEN=0
+    edns_opt = b"\x00\x00\x29\x10\x00\x00\x00\x00\x00\x00\x00"
+    return header + question + edns_opt
 
 
 def _parse_dns_response(data: bytes, target_qtype: int) -> List[bytes]:
@@ -97,22 +114,45 @@ def _parse_dns_response(data: bytes, target_qtype: int) -> List[bytes]:
     return answers
 
 
-def query_dns_raw(name: str, qtype: int, server: str = "8.8.8.8", timeout: float = 1.0) -> List[bytes]:
-    """Execute a low-level UDP DNS query with a short timeout."""
-    try:
-        packet = _build_dns_query(name, qtype)
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(timeout)
-        sock.sendto(packet, (server, 53))
-        resp, _ = sock.recvfrom(2048)
-        sock.close()
-        return _parse_dns_response(resp, qtype)
-    except Exception:
-        return []
+def query_dns_raw(name: str, qtype: int, server: str = "1.1.1.1", timeout: float = 1.0) -> List[bytes]:
+    """Execute a low-level UDP DNS query with EDNS0 and server fallback."""
+    servers = [server] if server not in ("1.1.1.1", "8.8.8.8") else ["1.1.1.1", "8.8.8.8"]
+    for srv in servers:
+        try:
+            packet = _build_dns_query(name, qtype)
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                sock.settimeout(timeout)
+                sock.sendto(packet, (srv, 53))
+                resp, _ = sock.recvfrom(4096)
+            answers = _parse_dns_response(resp, qtype)
+            if answers:
+                return answers
+        except Exception:
+            continue
+    return []
 
 
-def query_dns_txt(domain: str, server: str = "8.8.8.8", timeout: float = 1.0) -> List[str]:
-    """Query and decode TXT records for a domain."""
+def query_dns_txt(domain: str, server: str = "1.1.1.1", timeout: float = 1.0) -> List[str]:
+    """Query and decode TXT records for a domain with dnspython and raw UDP fallback."""
+    if HAS_DNS:
+        try:
+            res = dns.resolver.Resolver(configure=True)
+            res.nameservers = ["1.1.1.1", "8.8.8.8"] + [ns for ns in res.nameservers if ns not in ("1.1.1.1", "8.8.8.8")]
+            res.timeout = timeout
+            res.lifetime = timeout * 2
+            answers = res.resolve(domain, "TXT")
+            records = []
+            for rdata in answers:
+                text = "".join(
+                    s.decode("utf-8", errors="replace") if isinstance(s, bytes) else str(s)
+                    for s in rdata.strings
+                )
+                records.append(text)
+            if records:
+                return records
+        except Exception:
+            pass
+
     rdatas = query_dns_raw(domain, qtype=16, server=server, timeout=timeout)
     results = []
     for rdata in rdatas:
@@ -127,9 +167,31 @@ def query_dns_txt(domain: str, server: str = "8.8.8.8", timeout: float = 1.0) ->
     return results
 
 
-def query_dns_tlsa(hostname: str, port: int = 25, server: str = "8.8.8.8", timeout: float = 1.0) -> List[Dict[str, Any]]:
+def query_dns_tlsa(hostname: str, port: int = 25, server: str = "1.1.1.1", timeout: float = 1.0) -> List[Dict[str, Any]]:
     """Query TLSA records (qtype 52) at _<port>._tcp.<hostname> for DANE."""
     tlsa_name = f"_{port}._tcp.{hostname.strip('.')}"
+    if HAS_DNS:
+        try:
+            res = dns.resolver.Resolver(configure=True)
+            res.nameservers = ["1.1.1.1", "8.8.8.8"] + [ns for ns in res.nameservers if ns not in ("1.1.1.1", "8.8.8.8")]
+            res.timeout = timeout
+            res.lifetime = timeout * 2
+            answers = res.resolve(tlsa_name, "TLSA")
+            records = []
+            for rdata in answers:
+                assoc_hex = rdata.cert.hex() if isinstance(rdata.cert, bytes) else str(rdata.cert)
+                records.append({
+                    "usage": int(rdata.usage),
+                    "selector": int(rdata.selector),
+                    "matching_type": int(rdata.mtype),
+                    "data": assoc_hex,
+                    "formatted": f"{rdata.usage} {rdata.selector} {rdata.mtype} {assoc_hex}",
+                })
+            if records:
+                return records
+        except Exception:
+            pass
+
     rdatas = query_dns_raw(tlsa_name, qtype=52, server=server, timeout=timeout)
     records = []
     for rd in rdatas:
