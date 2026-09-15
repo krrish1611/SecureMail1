@@ -121,7 +121,7 @@ def train_models(n_per_class: int = 500, baseline_n: int = 1500,
     import datetime
     import json
     metadata = {
-        "trained_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "trained_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "source": source,
         "n_per_class": n_per_class,
         "baseline_n": baseline_n,

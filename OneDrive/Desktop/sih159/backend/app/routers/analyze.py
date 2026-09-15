@@ -545,11 +545,11 @@ async def live_websocket_endpoint(websocket: WebSocket):
 
                 bpf = None
                 if protocol_filter == "smtp":
-                    bpf = "tcp and (port 25 or port 465 or port 587)"
+                    bpf = "tcp and (port 25 or port 465 or port 587 or port 2525 or port 1587 or port 1025 or port 1465)"
                 elif protocol_filter == "imap":
-                    bpf = "tcp and (port 143 or port 993)"
+                    bpf = "tcp and (port 143 or port 993 or port 1143 or port 1993)"
                 elif protocol_filter == "pop3":
-                    bpf = "tcp and (port 110 or port 995)"
+                    bpf = "tcp and (port 110 or port 995 or port 1110 or port 1995)"
 
                 active_monitor = LiveMonitor(
                     interface=interface,
@@ -1165,6 +1165,22 @@ async def test_webhook(req: WebhookTestRequest):
                     break
             if sample_session:
                 break
+
+    if not sample_session:
+        try:
+            from core.history import get_history, get_scan
+            hist = get_history(limit=5)
+            for scan in hist:
+                loaded_scan = get_scan(scan.get("job_id"))
+                if loaded_scan and loaded_scan.get("sessions"):
+                    for s in loaded_scan["sessions"]:
+                        if any(f.severity >= min_sev for f in s.findings):
+                            sample_session = s
+                            break
+                if sample_session:
+                    break
+        except Exception:
+            pass
 
     if not sample_session:
         sample_session = Session(
