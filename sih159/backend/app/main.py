@@ -29,8 +29,14 @@ FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "
 
 
 @app.get("/api/health")
+@app.head("/api/health")
+@app.get("/health")
+@app.head("/health")
+@app.get("/ping")
+@app.head("/ping")
 def health():
     return {"status": "ok", "tool": "SecureMailScope", "version": "0.1.0"}
+
 
 
 # Serve React build if it exists
@@ -38,6 +44,7 @@ if os.path.isdir(FRONTEND_DIR):
     app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="assets")
 
     @app.get("/{full_path:path}")
+    @app.head("/{full_path:path}")
     async def serve_spa(full_path: str):
         # Never return index.html for API endpoints
         if full_path.startswith("api/") or full_path == "api":
