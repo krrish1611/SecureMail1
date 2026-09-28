@@ -8,7 +8,7 @@
 # Proxy /api requests to the deployed Vercel backend
 [[redirects]]
   from = "/api/*"
-  to = "https://securemail1-backend-b52m7el2a-krrishsah1611-4750.vercel.app/api/:splat"
+  to = "https://secure-mail1.vercel.app/api/:splat"
   status = 200
   force = true
 

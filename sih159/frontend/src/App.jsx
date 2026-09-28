@@ -30,8 +30,11 @@ const VERDICT_COLORS = {
 }
 
 // Configure API base URL: defaults to empty string so requests route through Netlify /api proxy,
-// or uses VITE_BACKEND_URL if explicitly configured in environment variables.
-const BACKEND_BASE_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '')
+const BACKEND_BASE_URL = (
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_API_URL ||
+  ''
+).replace(/\/$/, '')
 axios.defaults.baseURL = BACKEND_BASE_URL
 
 // Add axios response interceptor to catch any accidental HTML responses returned from misrouted endpoints
