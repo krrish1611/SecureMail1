@@ -7,21 +7,27 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
 SIH_DIR = os.path.join(PROJECT_ROOT, "sih159")
 
-for p in [SIH_DIR, PROJECT_ROOT, CURRENT_DIR]:
+for p in [PROJECT_ROOT, SIH_DIR, CURRENT_DIR]:
     abs_p = os.path.abspath(p)
     if os.path.isdir(abs_p) and abs_p not in sys.path:
         sys.path.insert(0, abs_p)
 
 # Resolve FastAPI instance
+err_direct = None
+err_sih159 = None
+err_traceback = None
+
 try:
     from backend.app.main import app as _resolved_app
-except Exception as e:
+except Exception as exc:
+    err_direct = f"{type(exc).__name__}: {exc}"
+    err_traceback = traceback.format_exc()
     try:
         from sih159.backend.app.main import app as _resolved_app
-    except Exception as e2:
+    except Exception as exc2:
+        err_sih159 = f"{type(exc2).__name__}: {exc2}"
         from fastapi import FastAPI
 
-        err_msg = traceback.format_exc()
         _resolved_app = FastAPI(title="SecureMailScope Diagnostics")
 
         @_resolved_app.get("/")
@@ -34,9 +40,9 @@ except Exception as e:
             return {
                 "status": "error",
                 "message": "Failed to import FastAPI backend app",
-                "error_direct": str(e),
-                "error_sih159": str(e2),
-                "traceback": err_msg,
+                "error_direct": str(err_direct),
+                "error_sih159": str(err_sih159),
+                "traceback": str(err_traceback),
                 "sys_path": sys.path,
                 "cwd": os.getcwd()
             }
