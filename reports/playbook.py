@@ -22,7 +22,19 @@ from typing import Any, Dict, List, Optional
 from core.models import Session, Finding, Severity, SEVERITY_NAMES
 from reports.hardening import generate_hardening_package, HardeningPackage
 
-REPORTS_DIR = os.path.join(os.path.dirname(__file__), "generated")
+_DEFAULT_REPORTS_DIR = os.path.join(os.path.dirname(__file__), "generated")
+
+def _resolve_reports_dir() -> str:
+    d = _DEFAULT_REPORTS_DIR
+    try:
+        os.makedirs(d, exist_ok=True)
+        return d
+    except OSError:
+        fallback = os.path.join("/tmp", "securemailscope_reports")
+        os.makedirs(fallback, exist_ok=True)
+        return fallback
+
+REPORTS_DIR = _resolve_reports_dir()
 
 
 def generate_playbook_data(

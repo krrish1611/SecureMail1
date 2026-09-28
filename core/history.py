@@ -16,7 +16,19 @@ import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-DB_DIR = os.path.join(os.path.dirname(__file__), "..", "output")
+_DEFAULT_DB_DIR = os.path.join(os.path.dirname(__file__), "..", "output")
+
+def _resolve_db_dir() -> str:
+    d = _DEFAULT_DB_DIR
+    try:
+        os.makedirs(d, exist_ok=True)
+        return d
+    except OSError:
+        fallback = os.path.join("/tmp", "securemailscope_output")
+        os.makedirs(fallback, exist_ok=True)
+        return fallback
+
+DB_DIR = _resolve_db_dir()
 DB_PATH = os.path.join(DB_DIR, "history.db")
 
 
