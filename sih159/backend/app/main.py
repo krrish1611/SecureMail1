@@ -29,8 +29,14 @@ FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "
 
 
 @app.get("/api/health")
+@app.head("/api/health")
+@app.get("/health")
+@app.head("/health")
+@app.get("/ping")
+@app.head("/ping")
 def health():
     return {"status": "ok", "tool": "SecureMailScope", "version": "0.1.0"}
+
 
 
 # Serve React build if it exists
