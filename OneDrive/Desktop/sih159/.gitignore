@@ -10,16 +10,28 @@ __pycache__/
 *_report.pdf
 reports/generated/
 
-# Python test cache
+# Python test & lint cache
 .pytest_cache/
+.ruff_cache/
 
 # ML saved models
 ml/saved_models/
 !ml/saved_models/.gitkeep
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # Node
 node_modules/
 frontend/dist/
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
@@ -32,3 +44,7 @@ output/
 *.pcap
 *.pcapng
 !deps/sample_traffic.pcap
+
+# AI Agent customizations
+.agents/
+
