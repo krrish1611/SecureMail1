@@ -79,8 +79,8 @@ function PostureRing({ score, size = 54, strokeWidth = 5 }) {
   const gradeSize = size < 44 ? 14 : size < 60 ? 17 : 22
 
   return (
-    <div className="posture-ring-wrap" style={{ width: size, height: size }} title={`${rating.label} — ${score ?? '—'}/100`}>
-      <svg className="posture-ring-svg" width={size} height={size}>
+    <div className="posture-ring-wrap" style={{ width: size, height: size, maxWidth: '100%' }} title={`${rating.label} — ${score ?? '—'}/100`}>
+      <svg className="posture-ring-svg" width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ maxWidth: '100%', height: 'auto' }}>
         <circle className="ring-track" cx={size / 2} cy={size / 2} r={radius} strokeWidth={strokeWidth} />
         <circle
           className="ring-fill"
@@ -2109,36 +2109,38 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                   </span>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{Object.values(overall.severity_counts).reduce((a, b) => a + b, 0)} Total</span>
                 </div>
-                <ResponsiveContainer width="100%" height={210}>
-                  <PieChart>
-                    <Pie
-                      data={sevPieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={48}
-                      outerRadius={74}
-                      paddingAngle={3}
-                    >
-                      {sevPieData.map((d) => (
-                        <Cell key={d.name} fill={SEV_COLORS[d.rawKey] || '#64748b'} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload
-                        return (
-                          <div className="custom-recharts-tooltip">
-                            <p style={{ color: SEV_COLORS[data.rawKey] }}><b>{data.name} Severity</b></p>
-                            <p>Count: <span>{data.value}</span> findings</p>
-                          </div>
-                        )
-                      }
-                      return null
-                    }} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div className="chart-canvas-wrapper">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={sevPieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={48}
+                        outerRadius={74}
+                        paddingAngle={3}
+                      >
+                        {sevPieData.map((d) => (
+                          <Cell key={d.name} fill={SEV_COLORS[d.rawKey] || '#64748b'} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload
+                          return (
+                            <div className="custom-recharts-tooltip">
+                              <p style={{ color: SEV_COLORS[data.rawKey] }}><b>{data.name} Severity</b></p>
+                              <p>Count: <span>{data.value}</span> findings</p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '6px' }}>
                   {sevPieData.map(d => (
                     <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-secondary)' }}>
@@ -2160,30 +2162,32 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                   </span>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Traffic Flow</span>
                 </div>
-                <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={protoBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
-                    <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
-                    <YAxis allowDecimals={false} stroke="#64748b" fontSize={11} tickLine={false} />
-                    <Tooltip content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload
-                        return (
-                          <div className="custom-recharts-tooltip">
-                            <p style={{ color: PROTOCOL_COLORS[data.name] || '#f97316' }}><b>{data.name} Protocol</b></p>
-                            <p>Sessions: <span>{data.sessions}</span></p>
-                          </div>
-                        )
-                      }
-                      return null
-                    }} />
-                    <Bar dataKey="sessions" radius={[6, 6, 0, 0]}>
-                      {protoBarData.map((d) => (
-                        <Cell key={`proto-cell-${d.name}`} fill={PROTOCOL_COLORS[d.name] || '#f97316'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="chart-canvas-wrapper">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={protoBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
+                      <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
+                      <YAxis allowDecimals={false} stroke="#64748b" fontSize={11} tickLine={false} />
+                      <Tooltip content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload
+                          return (
+                            <div className="custom-recharts-tooltip">
+                              <p style={{ color: PROTOCOL_COLORS[data.name] || '#f97316' }}><b>{data.name} Protocol</b></p>
+                              <p>Sessions: <span>{data.sessions}</span></p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }} />
+                      <Bar dataKey="sessions" radius={[6, 6, 0, 0]}>
+                        {protoBarData.map((d) => (
+                          <Cell key={`proto-cell-${d.name}`} fill={PROTOCOL_COLORS[d.name] || '#f97316'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '6px' }}>
                   {protoBarData.map(d => (
                     <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-secondary)' }}>
@@ -2205,33 +2209,35 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                   </span>
                   <span style={{ fontSize: '11px', color: 'var(--accent-orange)' }}>Health Wave</span>
                 </div>
-                <ResponsiveContainer width="100%" height={210}>
-                  <AreaChart data={streamScoreData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="scoreAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#38a856" stopOpacity={0.6} />
-                        <stop offset="95%" stopColor="#38a856" stopOpacity={0.05} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
-                    <XAxis dataKey="index" stroke="#64748b" fontSize={11} tickLine={false} />
-                    <YAxis domain={[0, 100]} stroke="#64748b" fontSize={11} tickLine={false} />
-                    <Tooltip content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload
-                        return (
-                          <div className="custom-recharts-tooltip">
-                            <p style={{ color: '#ff924c' }}><b>{data.name} ({data.protocol})</b></p>
-                            <p>Posture Score: <b style={{ color: data.score < 50 ? '#ff595e' : data.score < 75 ? '#ffca3a' : '#38a856' }}>{data.score}/100</b></p>
-                            <p>Findings: <span>{data.findings}</span></p>
-                          </div>
-                        )
-                      }
-                      return null
-                    }} />
-                    <Area type="monotone" dataKey="score" stroke="#38a856" strokeWidth={2.5} fillOpacity={1} fill="url(#scoreAreaGrad)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <div className="chart-canvas-wrapper">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={streamScoreData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="scoreAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#38a856" stopOpacity={0.6} />
+                          <stop offset="95%" stopColor="#38a856" stopOpacity={0.05} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.08)" vertical={false} />
+                      <XAxis dataKey="index" stroke="#64748b" fontSize={11} tickLine={false} />
+                      <YAxis domain={[0, 100]} stroke="#64748b" fontSize={11} tickLine={false} />
+                      <Tooltip content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload
+                          return (
+                            <div className="custom-recharts-tooltip">
+                              <p style={{ color: '#ff924c' }}><b>{data.name} ({data.protocol})</b></p>
+                              <p>Posture Score: <b style={{ color: data.score < 50 ? '#ff595e' : data.score < 75 ? '#ffca3a' : '#38a856' }}>{data.score}/100</b></p>
+                              <p>Findings: <span>{data.findings}</span></p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }} />
+                      <Area type="monotone" dataKey="score" stroke="#38a856" strokeWidth={2.5} fillOpacity={1} fill="url(#scoreAreaGrad)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                     <span style={{ width: '12px', height: '3px', borderRadius: '2px', background: 'var(--primary)' }}></span>
@@ -2251,36 +2257,38 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                   </span>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Security Ratio</span>
                 </div>
-                <ResponsiveContainer width="100%" height={210}>
-                  <PieChart>
-                    <Pie
-                      data={encryptionBreakdownData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={48}
-                      outerRadius={74}
-                      paddingAngle={4}
-                    >
-                      {encryptionBreakdownData.map((d) => (
-                        <Cell key={d.name} fill={d.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload
-                        return (
-                          <div className="custom-recharts-tooltip">
-                            <p style={{ color: data.color }}><b>{data.name}</b></p>
-                            <p>Count: <span>{data.value}</span> streams</p>
-                          </div>
-                        )
-                      }
-                      return null
-                    }} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div className="chart-canvas-wrapper">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={encryptionBreakdownData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={48}
+                        outerRadius={74}
+                        paddingAngle={4}
+                      >
+                        {encryptionBreakdownData.map((d) => (
+                          <Cell key={d.name} fill={d.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload
+                          return (
+                            <div className="custom-recharts-tooltip">
+                              <p style={{ color: data.color }}><b>{data.name}</b></p>
+                              <p>Count: <span>{data.value}</span> streams</p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap', marginTop: '6px' }}>
                   {encryptionBreakdownData.map(d => (
                     <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-secondary)' }}>
@@ -3694,7 +3702,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
 
             {mlStatus ? (
               <div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+                <div className="ml-status-grid">
                   <div className="forensic-box">
                     <div className="forensic-box-title">Risk Classifier (Random Forest)</div>
                     <div style={{ fontSize: '18px', fontWeight: '700', color: mlStatus.risk_model_ready ? 'var(--sev-safe)' : 'var(--sev-critical)' }}>
@@ -3763,7 +3771,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                   </p>
 
                   {/* Source Selection Cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                  <div className="ml-sources-grid">
                     <div
                       onClick={() => setTrainSource('synthetic')}
                       style={{
@@ -3900,7 +3908,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                   </div>
 
                   {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <div className="ml-action-buttons">
                     <button
                       className="btn-primary"
                       onClick={trainMl}
@@ -4224,34 +4232,36 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
               </div>
 
               {historyTrends?.points?.length > 1 ? (
-                <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={historyTrends.points} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                    <XAxis dataKey="date_label" stroke="var(--text-muted)" fontSize={11} />
-                    <YAxis domain={[0, 100]} stroke="var(--text-muted)" fontSize={11} />
-                    <Tooltip content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const d = payload[0].payload
-                        return (
-                          <div className="custom-recharts-tooltip">
-                            <p style={{ fontWeight: 700, color: 'var(--primary)' }}>{d.target} ({d.scan_type.toUpperCase()})</p>
-                            <p>Posture Score: <b>{d.posture_score}/100</b></p>
-                            <p>Encrypted Ratio: <b>{d.encrypted_ratio}%</b></p>
-                            <p>Critical Flaws: <span style={{ color: '#ff595e' }}>{d.critical_findings}</span></p>
-                          </div>
-                        )
-                      }
-                      return null
-                    }} />
-                    <Area type="monotone" dataKey="posture_score" stroke="var(--primary)" strokeWidth={2.5} fillOpacity={1} fill="url(#scoreGradient)" name="Posture Score" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <div className="chart-canvas-wrapper tall">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={historyTrends.points} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                      <XAxis dataKey="date_label" stroke="var(--text-muted)" fontSize={11} />
+                      <YAxis domain={[0, 100]} stroke="var(--text-muted)" fontSize={11} />
+                      <Tooltip content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const d = payload[0].payload
+                          return (
+                            <div className="custom-recharts-tooltip">
+                              <p style={{ fontWeight: 700, color: 'var(--primary)' }}>{d.target} ({d.scan_type.toUpperCase()})</p>
+                              <p>Posture Score: <b>{d.posture_score}/100</b></p>
+                              <p>Encrypted Ratio: <b>{d.encrypted_ratio}%</b></p>
+                              <p>Critical Flaws: <span style={{ color: '#ff595e' }}>{d.critical_findings}</span></p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }} />
+                      <Area type="monotone" dataKey="posture_score" stroke="var(--primary)" strokeWidth={2.5} fillOpacity={1} fill="url(#scoreGradient)" name="Posture Score" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
                 <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                   Run at least two scans (PCAP upload, live capture, or domain probe) to populate the progression trend line.
@@ -4413,7 +4423,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
         {/* 1-Click Server Hardening Generator Modal */}
         {hardeningModalOpen && typeof document !== 'undefined' && createPortal(
           <div className="modal-backdrop" onClick={() => setHardeningModalOpen(false)}>
-            <div className="modal-card" style={{ maxWidth: '960px', width: '94%' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-card hardening-modal" onClick={e => e.stopPropagation()}>
               <div className="modal-header" style={{ padding: '12px 18px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
@@ -4572,7 +4582,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
         {/* SIEM / Slack / Discord Webhook Alerting Modal */}
         {webhookModalOpen && typeof document !== 'undefined' && createPortal(
           <div className="modal-backdrop" onClick={() => setWebhookModalOpen(false)}>
-            <div className="modal-card" style={{ maxWidth: '880px', width: '94%' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-card webhook-modal" onClick={e => e.stopPropagation()}>
               <div className="modal-header" style={{ padding: '12px 18px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
@@ -4585,7 +4595,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
               </div>
 
               <div className="modal-body" style={{ padding: '14px 18px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(270px, 1fr) minmax(320px, 1.3fr)', gap: '16px', alignItems: 'stretch' }}>
+                <div className="webhook-modal-grid">
                   {/* Left Column: Configuration Controls */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'var(--bg-app)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                     <div>
