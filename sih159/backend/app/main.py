@@ -44,6 +44,7 @@ if os.path.isdir(FRONTEND_DIR):
     app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="assets")
 
     @app.get("/{full_path:path}")
+    @app.head("/{full_path:path}")
     async def serve_spa(full_path: str):
         # Never return index.html for API endpoints
         if full_path.startswith("api/") or full_path == "api":
