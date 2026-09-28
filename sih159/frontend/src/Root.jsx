@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import App from './App.jsx'
 import LandingPage from './LandingPage.jsx'
 import ErrorBoundary from './ErrorBoundary.jsx'
+import Preloader from './Preloader.jsx'
 
 export default function Root() {
   // Theme state synchronized across both landing page and main app
@@ -16,6 +17,9 @@ export default function Root() {
     }
     return 'light'
   })
+
+  // 5-second preloader active on initial load
+  const [showPreloader, setShowPreloader] = useState(true)
 
   // Synchronize <html> and <body> styles & classes immediately to eliminate white flash
   useEffect(() => {
@@ -106,6 +110,14 @@ export default function Root() {
 
   return (
     <div className={`root-view-wrapper ${theme === 'light' ? 'theme-light' : 'theme-dark'}`}>
+      {/* 5-Second Themed Preloader with Halftone Bloom & Fuzzy Text */}
+      {showPreloader && (
+        <Preloader
+          theme={theme}
+          onComplete={() => setShowPreloader(false)}
+        />
+      )}
+
       {/* Smooth Cinematic View Transition Curtain */}
       <div 
         className={`root-transition-curtain ${theme === 'light' ? 'theme-light' : 'theme-dark'} phase-${transitionPhase} ${isTransitioning ? 'active' : ''}`}

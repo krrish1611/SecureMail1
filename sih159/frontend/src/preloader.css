@@ -1,0 +1,448 @@
+/* ==========================================================================
+   SecureMailScope 5-Second Cinematic Preloader Styles
+   Dark & Light Theme Synchronized
+   ========================================================================== */
+
+.sms-preloader-root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.sms-preloader-root.theme-dark {
+  background-color: #07090c;
+  color: #ffffff;
+}
+
+.sms-preloader-root.theme-light {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.sms-preloader-root.phase-exit {
+  opacity: 0;
+  transform: scale(1.025);
+  pointer-events: none;
+}
+
+/* Halftone Bloom Background Layer */
+.sms-preloader-bg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+/* Vignette and scanline overlay */
+.sms-preloader-vignette {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.theme-dark .sms-preloader-vignette {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(7, 9, 12, 0.2) 0%, rgba(7, 9, 12, 0.85) 100%),
+    linear-gradient(180deg, rgba(7, 9, 12, 0.6) 0%, transparent 40%, transparent 60%, rgba(7, 9, 12, 0.8) 100%);
+}
+
+.theme-light .sms-preloader-vignette {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.82) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, transparent 40%, transparent 60%, rgba(255, 255, 255, 0.75) 100%);
+}
+
+/* Foreground UI Container */
+.sms-preloader-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 900px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* Header Security Lockup Tag */
+.sms-preloader-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-family: var(--lp-font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: preloaderFadeIn 0.6s ease both;
+}
+
+.theme-dark .sms-preloader-badge {
+  background: rgba(204, 255, 0, 0.08);
+  border: 1px solid rgba(204, 255, 0, 0.28);
+  color: #ccff00;
+  box-shadow: 0 0 20px rgba(204, 255, 0, 0.12);
+}
+
+.theme-light .sms-preloader-badge {
+  background: rgba(116, 46, 197, 0.07);
+  border: 1px solid rgba(116, 46, 197, 0.28);
+  color: #742ec5;
+  box-shadow: 0 0 20px rgba(116, 46, 197, 0.1);
+}
+
+.sms-preloader-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: preloaderPulse 1.4s infinite ease-in-out;
+}
+
+.theme-dark .sms-preloader-led {
+  background-color: #ccff00;
+  box-shadow: 0 0 8px #ccff00;
+}
+
+.theme-light .sms-preloader-led {
+  background-color: #742ec5;
+  box-shadow: 0 0 8px #742ec5;
+}
+
+/* Central Text Noise Wrapper */
+.sms-preloader-fuzzy-wrap {
+  width: 100%;
+  margin-bottom: 12px;
+  animation: preloaderScaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Subtitle Tagline */
+.sms-preloader-tagline {
+  font-family: var(--lp-font-heading, 'Inter', sans-serif);
+  font-size: clamp(12px, 2.5vw, 15px);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  margin-bottom: 34px;
+  max-width: 580px;
+  line-height: 1.5;
+}
+
+.theme-dark .sms-preloader-tagline {
+  color: #9aa5b5;
+}
+
+.theme-light .sms-preloader-tagline {
+  color: #4b5563;
+}
+
+/* Progress HUD Card */
+.sms-preloader-hud-card {
+  width: 100%;
+  max-width: 560px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.theme-dark .sms-preloader-hud-card {
+  background: rgba(9, 13, 18, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.theme-light .sms-preloader-hud-card {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  box-shadow: 0 8px 32px rgba(116, 46, 197, 0.08);
+}
+
+/* Telemetry Status Line */
+.sms-preloader-telemetry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--lp-font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  min-height: 20px;
+}
+
+.sms-preloader-telemetry-text {
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-dark .sms-preloader-telemetry-text {
+  color: #ccff00;
+}
+
+.theme-light .sms-preloader-telemetry-text {
+  color: #742ec5;
+}
+
+.sms-preloader-percent {
+  font-variant-numeric: tabular-nums;
+  margin-left: 14px;
+}
+
+.theme-dark .sms-preloader-percent {
+  color: #ffffff;
+}
+
+.theme-light .sms-preloader-percent {
+  color: #0f172a;
+}
+
+/* Progress Track and Bar */
+.sms-preloader-progress-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.theme-dark .sms-preloader-progress-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.theme-light .sms-preloader-progress-track {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.sms-preloader-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.08s linear;
+  position: relative;
+}
+
+.theme-dark .sms-preloader-progress-fill {
+  background: linear-gradient(90deg, #00f0ff 0%, #ccff00 100%);
+  box-shadow: 0 0 14px rgba(204, 255, 0, 0.7);
+}
+
+.theme-light .sms-preloader-progress-fill {
+  background: linear-gradient(90deg, #3b82f6 0%, #742ec5 100%);
+  box-shadow: 0 0 14px rgba(116, 46, 197, 0.6);
+}
+
+/* Secondary Info Row */
+.sms-preloader-hud-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--lp-font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  opacity: 0.65;
+}
+
+/* Protocol Chips */
+.sms-preloader-chips {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sms-preloader-chip {
+  font-family: var(--lp-font-mono, 'JetBrains Mono', monospace);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.theme-dark .sms-preloader-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #718096;
+}
+
+.theme-light .sms-preloader-chip {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #64748b;
+}
+
+/* Skip Button (Top Right Corner) */
+.sms-preloader-skip-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 20;
+  background: transparent;
+  border: 1px solid;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-family: var(--lp-font-mono, 'JetBrains Mono', monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  min-height: 38px;
+}
+
+.theme-dark .sms-preloader-skip-btn {
+  border-color: rgba(204, 255, 0, 0.35);
+  color: #ccff00;
+  background: rgba(9, 13, 18, 0.6);
+}
+
+.theme-dark .sms-preloader-skip-btn:hover {
+  background: #ccff00;
+  color: #000000;
+  box-shadow: 0 0 16px rgba(204, 255, 0, 0.4);
+}
+
+.theme-light .sms-preloader-skip-btn {
+  border-color: rgba(116, 46, 197, 0.35);
+  color: #742ec5;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.theme-light .sms-preloader-skip-btn:hover {
+  background: #742ec5;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(116, 46, 197, 0.35);
+}
+
+/* Animations */
+@keyframes preloaderPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes preloaderFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes preloaderScaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Mobile & Small Phone Breakpoints */
+@media (max-width: 640px) {
+  .sms-preloader-content {
+    padding: 16px;
+  }
+
+  .sms-preloader-badge {
+    font-size: 9.5px;
+    padding: 5px 12px;
+    margin-bottom: 18px;
+  }
+
+  .sms-preloader-tagline {
+    font-size: 12px;
+    margin-bottom: 24px;
+    padding: 0 10px;
+  }
+
+  .sms-preloader-hud-card {
+    padding: 14px 16px;
+  }
+
+  .sms-preloader-telemetry-text {
+    font-size: 10px;
+  }
+
+  .sms-preloader-chips {
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .sms-preloader-chip {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+
+  .sms-preloader-skip-btn {
+    top: 16px;
+    right: 16px;
+    padding: 6px 12px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .sms-preloader-badge {
+    font-size: 8.5px;
+    padding: 4px 10px;
+  }
+
+  .sms-preloader-telemetry-text {
+    font-size: 9px;
+  }
+
+  .sms-preloader-skip-btn {
+    font-size: 9.5px;
+    padding: 5px 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sms-preloader-root {
+    transition: opacity 0.15s ease !important;
+  }
+  .sms-preloader-led {
+    animation: none !important;
+  }
+}
