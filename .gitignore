@@ -1,0 +1,18 @@
+# AI Agent customizations (local)
+.agents/
+.gemini/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
