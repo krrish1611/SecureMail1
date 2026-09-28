@@ -441,8 +441,10 @@ export default function HowItWorksCircuit({ onLaunchApp }) {
           - Right: 3 Expansion Cartridge Bays (Sessions -> Radar -> Compliance)
           =================================================================== */}
       <div className="lp-superlinked-pcb">
-        {/* Motherboard Relief Chassis & Hardware Details Layer */}
-        <div className="lp-pcb-chassis-layer" aria-hidden="true">
+        {/* Desktop 3D Industrial Motherboard View (Active on >= 860px) */}
+        <div className="lp-pcb-desktop-arena">
+          {/* Motherboard Relief Chassis & Hardware Details Layer */}
+          <div className="lp-pcb-chassis-layer" aria-hidden="true">
           {/* Sculpted CNC Milled Background Contour Ridges */}
           <div className="lp-pcb-cnc-ridge ridge-diagonal-left" />
           <div className="lp-pcb-cnc-ridge ridge-diagonal-center" />
@@ -1136,6 +1138,143 @@ export default function HowItWorksCircuit({ onLaunchApp }) {
               })}
             </div>
           </div>
+        </div>
+        {/* End Desktop 3D Industrial Motherboard View */}
+        </div>
+
+        {/* ===================================================================
+            MOBILE VIEW: DEDICATED ARCHITECTURE PIPELINE COCKPIT (< 860px)
+            =================================================================== */}
+        <div className="lp-pcb-mobile-cockpit">
+          {/* 1. Mobile Stage Selector Tabs */}
+          <div className="lp-m-stage-tabs">
+            {PIPELINE_STAGES.map((stg, idx) => (
+              <button
+                key={stg.id}
+                className={`lp-m-stage-tab ${activeStateIdx === idx ? 'active' : ''}`}
+                onClick={() => changeStage(idx)}
+              >
+                <span className="lp-m-tab-num">0{idx + 1}</span>
+                <span className="lp-m-tab-name">
+                  {idx === 0 ? 'INGEST' : idx === 1 ? 'TLS AUDIT' : 'PQC & SCORE'}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* 2. Active Stage Main Card with AnimatePresence */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`mobile-stage-${activeStateIdx}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="lp-m-card-chassis"
+            >
+              {/* Stage Card Header */}
+              <div className="lp-m-card-header">
+                <div className="lp-m-stage-badge">
+                  <span className="lp-m-pulse-dot" />
+                  <span>STAGE 0{activeStateIdx + 1} / 03 • {currentState.hubEyebrow}</span>
+                </div>
+                <div className="lp-m-nav-arrows">
+                  <button className="lp-m-arrow-btn" onClick={handlePrev} title="Previous Stage" aria-label="Previous Stage">
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button className="lp-m-arrow-btn" onClick={handleNext} title="Next Stage" aria-label="Next Stage">
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Title & Description */}
+              <h3 className="lp-m-card-title">{currentState.tabLabel.replace(/^\d+\.\s*/, '')}</h3>
+              <p className="lp-m-card-desc">{currentState.hubSubcopy}</p>
+
+              {/* 3-Step Live Pipeline Flow Strip */}
+              <div className="lp-m-pipeline-flow">
+                <div className="lp-m-flow-node">
+                  <div className="lp-m-flow-node-badge input">
+                    <Radio size={12} />
+                    <span>INPUT</span>
+                  </div>
+                  <span className="lp-m-flow-node-text">{currentState.flowInput}</span>
+                </div>
+
+                <div className="lp-m-flow-arrow-divider">
+                  <div className="lp-m-flow-laser-line" />
+                  <span className="lp-m-flow-arrow-icon">▼</span>
+                </div>
+
+                <div className="lp-m-flow-node">
+                  <div className="lp-m-flow-node-badge core">
+                    <Cpu size={12} />
+                    <span>ENGINE CORE</span>
+                  </div>
+                  <span className="lp-m-flow-node-text">SecureMailScope Inspection Matrix</span>
+                </div>
+
+                <div className="lp-m-flow-arrow-divider">
+                  <div className="lp-m-flow-laser-line" />
+                  <span className="lp-m-flow-arrow-icon">▼</span>
+                </div>
+
+                <div className="lp-m-flow-node">
+                  <div className="lp-m-flow-node-badge output">
+                    <ShieldCheck size={12} />
+                    <span>OUTPUT</span>
+                  </div>
+                  <span className="lp-m-flow-node-text">{currentState.flowOutput}</span>
+                </div>
+              </div>
+
+              {/* Active Stage Capabilities Grid (3 Cards) */}
+              <div className="lp-m-capabilities-header">
+                <span>ACTIVE INSPECTION MODULES</span>
+              </div>
+              <div className="lp-m-capabilities-grid">
+                {currentState.leftCards.map((c) => (
+                  <div key={c.id} className="lp-m-capability-tile">
+                    <div className="lp-m-capability-icon">
+                      {renderCardBadgeIcon(c.icons[0])}
+                    </div>
+                    <div className="lp-m-capability-content">
+                      <div className="lp-m-capability-title">{c.title}</div>
+                      <div className="lp-m-capability-sub">{c.sub}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Card Footer with Telemetry Verdict & Launch Button */}
+              <div className="lp-m-card-footer">
+                <div className="lp-m-telemetry-badge">
+                  <span className="lp-m-telemetry-label">TELEMETRY:</span>
+                  <span className="lp-m-telemetry-headline">{currentState.ticket.headline}</span>
+                </div>
+                <button
+                  className="lp-m-launch-btn"
+                  onClick={onLaunchApp}
+                  title="Launch Cockpit to Test Live"
+                >
+                  <span>{currentState.ticket.code}</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+
+              {/* Pagination Dots */}
+              <div className="lp-m-dots-row">
+                {PIPELINE_STAGES.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`lp-m-dot ${activeStateIdx === i ? 'active' : ''}`}
+                    onClick={() => changeStage(i)}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
