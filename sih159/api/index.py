@@ -12,20 +12,24 @@ for p in [SIH_DIR, PROJECT_ROOT, CURRENT_DIR]:
     if os.path.isdir(abs_p) and abs_p not in sys.path:
         sys.path.insert(0, abs_p)
 
+# Resolve FastAPI instance
 try:
-    from backend.app.main import app
+    from backend.app.main import app as _resolved_app
 except Exception as e:
     try:
-        from sih159.backend.app.main import app
+        from sih159.backend.app.main import app as _resolved_app
     except Exception as e2:
         from fastapi import FastAPI
 
         err_msg = traceback.format_exc()
-        app = FastAPI(title="SecureMailScope Diagnostics")
+        _resolved_app = FastAPI(title="SecureMailScope Diagnostics")
 
-        @app.get("/")
-        @app.get("/api/health")
-        @app.get("/{full_path:path}")
+        @_resolved_app.get("/")
+        @_resolved_app.get("/api")
+        @_resolved_app.get("/api/")
+        @_resolved_app.get("/api/index")
+        @_resolved_app.get("/api/health")
+        @_resolved_app.get("/{full_path:path}")
         def debug_fallback(full_path: str = ""):
             return {
                 "status": "error",
@@ -36,3 +40,7 @@ except Exception as e:
                 "sys_path": sys.path,
                 "cwd": os.getcwd()
             }
+
+# Top-level ASGI entrypoint for Vercel Serverless Function detection
+app = _resolved_app
+application = app
