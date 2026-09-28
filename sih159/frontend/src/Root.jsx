@@ -18,8 +18,13 @@ export default function Root() {
     return 'light'
   })
 
-  // 5-second preloader active on initial load
-  const [showPreloader, setShowPreloader] = useState(true)
+  // Show preloader only on the first load per browser session
+  const [showPreloader, setShowPreloader] = useState(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('sms_preloader_shown')) {
+      return false
+    }
+    return true
+  })
 
   // Synchronize <html> and <body> styles & classes immediately to eliminate white flash
   useEffect(() => {
@@ -42,7 +47,7 @@ export default function Root() {
     }
   }
 
-  // Check initial route from hash or URL query
+  // Check initial route from hash, URL query, or saved session state
   const getInitialView = () => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash
@@ -50,6 +55,9 @@ export default function Root() {
       if (hash === '#/app' || params.get('view') === 'app' || params.get('app') === 'true') {
         return 'app'
       }
+      // Restore from session if the user refreshed while on the app
+      const saved = sessionStorage.getItem('sms_current_view')
+      if (saved === 'app' || saved === 'landing') return saved
     }
     return 'landing'
   }
@@ -74,6 +82,7 @@ export default function Root() {
         window.location.hash = '#/'
       }
       setCurrentView(targetView)
+      sessionStorage.setItem('sms_current_view', targetView)
       window.scrollTo({ top: 0, behavior: 'instant' })
       setTransitionPhase('uncovering')
 
@@ -114,7 +123,10 @@ export default function Root() {
       {showPreloader && (
         <Preloader
           theme={theme}
-          onComplete={() => setShowPreloader(false)}
+          onComplete={() => {
+            sessionStorage.setItem('sms_preloader_shown', '1')
+            setShowPreloader(false)
+          }}
         />
       )}
 

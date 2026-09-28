@@ -15,8 +15,8 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
 }
 
 .sms-preloader-root.theme-dark {
@@ -31,8 +31,7 @@
 
 .sms-preloader-root.phase-exit {
   opacity: 0;
-  transform: scale(1.025);
-  pointer-events: none;
+  pointer-events: none !important;
 }
 
 /* Halftone Bloom Background Layer */

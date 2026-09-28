@@ -4829,3 +4829,261 @@ html, body {
   }
 }
 
+
+/* ==========================================================================
+   8. MOBILE NAVIGATION DRAWER (Dashboard — Matches Landing Page Style)
+   ========================================================================== */
+
+/* Hamburger Button — hidden on desktop */
+.mobile-nav-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobile-nav-hamburger:hover {
+  background: var(--bg-surface-dim);
+}
+
+.theme-dark .mobile-nav-hamburger:hover {
+  border-color: #c8ff00;
+  color: #c8ff00;
+  box-shadow: 0 0 12px rgba(200, 255, 0, 0.15);
+}
+
+.theme-light .mobile-nav-hamburger:hover {
+  border-color: #742ec5;
+  color: #742ec5;
+  box-shadow: 0 0 12px rgba(116, 46, 197, 0.15);
+}
+
+/* Drawer Overlay */
+.app-mobile-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 500;
+  display: flex;
+  justify-content: flex-end;
+  animation: drawerOverlayIn 0.2s ease forwards;
+}
+
+@keyframes drawerOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Drawer Panel */
+.app-mobile-drawer-panel {
+  width: 100%;
+  max-width: 340px;
+  height: 100%;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: drawerSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes drawerSlideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+/* Dark theme panel */
+.theme-dark .app-mobile-drawer-panel {
+  background: #0c1017;
+  border-left: 1px solid rgba(200, 255, 0, 0.2);
+  box-shadow: -6px 0 30px rgba(0, 0, 0, 0.85);
+}
+
+/* Light theme panel */
+.theme-light .app-mobile-drawer-panel {
+  background: #f8f9fb;
+  border-left: 1px solid rgba(116, 46, 197, 0.2);
+  box-shadow: -6px 0 30px rgba(0, 0, 0, 0.12);
+}
+
+/* Drawer Header */
+.app-mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  margin-bottom: 8px;
+}
+
+.theme-dark .app-mobile-drawer-header {
+  border-bottom: 1px solid rgba(200, 255, 0, 0.2);
+}
+
+.theme-light .app-mobile-drawer-header {
+  border-bottom: 1px solid rgba(116, 46, 197, 0.15);
+}
+
+.app-mobile-drawer-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.theme-dark .app-mobile-drawer-label {
+  color: rgba(200, 255, 0, 0.7);
+}
+
+.theme-light .app-mobile-drawer-label {
+  color: rgba(116, 46, 197, 0.7);
+}
+
+/* Close Button */
+.app-mobile-drawer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-dark .app-mobile-drawer-close:hover {
+  background: rgba(200, 255, 0, 0.1);
+  color: #c8ff00;
+  border-color: #c8ff00;
+}
+
+.theme-light .app-mobile-drawer-close:hover {
+  background: rgba(116, 46, 197, 0.08);
+  color: #742ec5;
+  border-color: #742ec5;
+}
+
+/* Drawer Links Container */
+.app-mobile-drawer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+/* Individual Drawer Link */
+.app-mobile-drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-heading, 'Syne', 'Inter', system-ui, sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.app-mobile-drawer-link span {
+  flex: 1;
+}
+
+.app-mobile-drawer-link:hover {
+  padding-left: 18px;
+}
+
+/* Dark theme link states */
+.theme-dark .app-mobile-drawer-link {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.theme-dark .app-mobile-drawer-link:hover {
+  color: #ffffff;
+  background: rgba(200, 255, 0, 0.06);
+}
+
+.theme-dark .app-mobile-drawer-link.active {
+  color: #07090c;
+  background: #c8ff00;
+  border-color: transparent;
+  box-shadow: 0 2px 10px rgba(200, 255, 0, 0.2);
+}
+
+/* Light theme link states */
+.theme-light .app-mobile-drawer-link {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.theme-light .app-mobile-drawer-link:hover {
+  color: #0f172a;
+  background: rgba(116, 46, 197, 0.06);
+}
+
+.theme-light .app-mobile-drawer-link.active {
+  color: #ffffff;
+  background: #742ec5;
+  border-color: transparent;
+  box-shadow: 0 2px 10px rgba(116, 46, 197, 0.25);
+}
+
+/* Badge inside drawer link */
+.app-mobile-drawer-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.theme-dark .app-mobile-drawer-badge {
+  background: rgba(200, 255, 0, 0.15);
+  color: #c8ff00;
+}
+
+.theme-dark .app-mobile-drawer-link.active .app-mobile-drawer-badge {
+  background: rgba(7, 9, 12, 0.2);
+  color: #07090c;
+}
+
+.theme-light .app-mobile-drawer-badge {
+  background: rgba(116, 46, 197, 0.12);
+  color: #742ec5;
+}
+
+.theme-light .app-mobile-drawer-link.active .app-mobile-drawer-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* Responsive: Show hamburger + hide desktop tabs on mobile */
+@media (max-width: 768px) {
+  .mobile-nav-hamburger {
+    display: flex;
+  }
+
+  .nav-tabs {
+    display: none !important;
+  }
+}

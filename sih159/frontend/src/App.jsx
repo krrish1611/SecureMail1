@@ -303,7 +303,11 @@ export default function App({ theme: propTheme, toggleTheme: propToggleTheme }) 
   const [sessions, setSessions] = useState([])
   const [expandedSessions, setExpandedSessions] = useState(new Set())
   const [detailCache, setDetailCache] = useState({})
-  const [activeTab, setActiveTab] = useState('analysis')
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = typeof window !== 'undefined' && sessionStorage.getItem('sms_active_tab')
+    return saved || 'analysis'
+  })
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [copiedKey, setCopiedKey] = useState(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
@@ -441,6 +445,17 @@ export default function App({ theme: propTheme, toggleTheme: propToggleTheme }) 
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // On mount: if active tab was restored from session, load its data
+  useEffect(() => {
+    if (activeTab === 'compliance') loadCompliance()
+    if (activeTab === 'live') loadInterfaces()
+    if (activeTab === 'ml') { loadMlStatus(); loadHistory(); }
+    if (activeTab === 'diagnostics') loadDiagnostics()
+    if (activeTab === 'history') { loadHistory(); loadTrends(); }
+    if (activeTab === 'mitm') loadMitmSimulation()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Prevent background document scrolling when any modal is open
@@ -1328,6 +1343,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
 
   const handleTabSwitch = (tab) => {
     setActiveTab(tab)
+    sessionStorage.setItem('sms_active_tab', tab)
     if (tab === 'compliance') loadCompliance()
     if (tab === 'live') loadInterfaces()
     if (tab === 'ml') { loadMlStatus(); loadHistory(); }
@@ -1557,8 +1573,61 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
               <div className="pulse-dot"></div>
               <span>Forensics Engine Ready</span>
             </div>
+
+            {/* Mobile Hamburger Menu Button — hidden on desktop via CSS */}
+            <button
+              className="mobile-nav-hamburger"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open navigation menu"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
           </div>
         </header>
+
+        {/* ===============================================================
+            Mobile Slide-Out Navigation Drawer (Landing-page style)
+            =============================================================== */}
+        {mobileNavOpen && (
+          <div className="app-mobile-drawer-overlay" onClick={() => setMobileNavOpen(false)}>
+            <div className="app-mobile-drawer-panel" onClick={(e) => e.stopPropagation()}>
+              <div className="app-mobile-drawer-header">
+                <span className="app-mobile-drawer-label">[ NAVIGATION ]</span>
+                <button className="app-mobile-drawer-close" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation">
+                  ✕
+                </button>
+              </div>
+
+              <div className="app-mobile-drawer-links">
+                {[
+                  { key: 'analysis',    label: 'ANALYSIS & FORENSICS', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+                  { key: 'compliance',  label: 'COMPLIANCE MATRIX',    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> },
+                  { key: 'live',        label: 'LIVE SNIFFER',         icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49"/></svg> },
+                  { key: 'ml',          label: 'ML STUDIO',            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg> },
+                  { key: 'diagnostics', label: 'SYSTEM DIAGNOSTICS',   icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> },
+                  { key: 'remediate',   label: 'REMEDIATE',            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> },
+                  { key: 'mitm',        label: 'MITM SIMULATOR',       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> },
+                  { key: 'history',     label: 'TRENDS & HISTORY',     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+                ].map(item => (
+                  <button
+                    key={item.key}
+                    className={`app-mobile-drawer-link ${activeTab === item.key ? 'active' : ''}`}
+                    onClick={() => { handleTabSwitch(item.key); setMobileNavOpen(false); }}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                    {item.key === 'analysis' && sessions.length > 0 && <span className="app-mobile-drawer-badge">{sessions.length}</span>}
+                    {item.key === 'history' && historyScans.length > 0 && <span className="app-mobile-drawer-badge">{historyScans.length}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
 
         {/* Main Navigation Tabs */}
