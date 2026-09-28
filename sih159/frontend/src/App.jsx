@@ -1815,7 +1815,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="exec-actions-wrap" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <button
                       className="chip-btn"
                       style={{ background: 'var(--bg-app)', border: '1px solid var(--border-color)', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px' }}
@@ -3371,7 +3371,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
 
                 {/* Interface or Simulation Selector */}
                 {!simulationMode ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '240px' }}>
+                  <div className="live-control-item" style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 'min(240px, 100%)', flex: '1 1 220px' }}>
                     <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Network Adapter:</label>
                     <select
                       id="network-adapter-select"
@@ -3379,7 +3379,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                       value={selectedInterface}
                       onChange={(e) => setSelectedInterface(e.target.value)}
                       disabled={liveCapturing}
-                      style={{ padding: '6px 12px', fontSize: '12.5px', minWidth: '260px' }}
+                      style={{ padding: '6px 12px', fontSize: '12.5px', width: '100%', minWidth: 0 }}
                     >
                       {interfaces.map(i => (
                         <option key={i.name} value={i.name}>
@@ -3389,7 +3389,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                     </select>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxWidth: '300px' }}>
+                  <div className="live-control-item" style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxWidth: '100%', flex: '1 1 240px' }}>
                     <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Simulation Dataset:</label>
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-app)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
                       📦 Replaying realistic SMTP/IMAP/POP3 email streams from sample PCAP
@@ -3398,7 +3398,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                 )}
 
                 {/* Protocol Filter */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '180px' }}>
+                <div className="live-control-item" style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 'min(180px, 100%)', flex: '1 1 160px' }}>
                   <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Protocol Filter:</label>
                   <select
                     id="live-protocol-filter"
@@ -3406,7 +3406,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                     value={liveProtocolFilter}
                     onChange={(e) => setLiveProtocolFilter(e.target.value)}
                     disabled={liveCapturing}
-                    style={{ padding: '6px 12px', fontSize: '12.5px' }}
+                    style={{ padding: '6px 12px', fontSize: '12.5px', width: '100%', minWidth: 0 }}
                   >
                     <option value="all">All Mail (25, 465, 587, 143, 993, 110, 995)</option>
                     <option value="smtp">SMTP Only (25, 465, 587)</option>
@@ -3416,7 +3416,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                 </div>
 
                 {/* Duration Slider */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '150px' }}>
+                <div className="live-control-item" style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 'min(140px, 100%)', flex: '1 1 140px' }}>
                   <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
                     Duration: <b>{liveDuration}s</b>
                   </label>
@@ -3432,7 +3432,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
                 </div>
 
                 {/* Start / Stop Button & Send Live Traffic */}
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                <div className="live-control-item live-control-buttons" style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
                   {liveCapturing ? (
                     <button
                       className="btn-danger"

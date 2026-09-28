@@ -3795,3 +3795,493 @@ body.theme-light .compare-modal-card {
   color: #94a3b8;
   line-height: 1.45;
 }
+
+/* ==========================================================================
+   MOBILE & TABLET RESPONSIVE SYSTEM (iPhone, Android, iPad, Foldables)
+   ========================================================================== */
+
+/* Universal Overflow & Touch Handling */
+html, body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Table Responsive Scrollers Across All Tabs */
+.table-responsive,
+.table-container,
+.table-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  display: block !important;
+  scrollbar-width: thin;
+}
+
+/* Medium Tablets & Small Desktops (<= 960px) */
+@media (max-width: 960px) {
+  .app-container {
+    padding: 18px 20px 70px;
+  }
+
+  .exec-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .exec-actions-wrap {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .pqc-radar-top-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* Standard Mobile & Small Tablets (<= 768px) */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 12px 14px 75px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Header & Navigation */
+  .app-header {
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+  }
+
+  .brand-section {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .brand-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .brand-title-group h1 {
+    font-size: 18px;
+  }
+
+  .brand-subtitle {
+    font-size: 12px;
+  }
+
+  .header-status-group {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .header-status-group .chip-btn,
+  .header-status-group .app-theme-toggle-btn {
+    padding: 7px 10px;
+    font-size: 11px;
+    flex: 1 1 auto;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .status-pill {
+    width: 100%;
+    justify-content: center;
+    padding: 6px 12px;
+    font-size: 11px;
+    box-sizing: border-box;
+  }
+
+  /* Horizontal Smooth Swipe Navigation Tabs */
+  .nav-tabs {
+    padding: 4px;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    scroll-snap-type: x mandatory;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-tab-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+
+  /* Upload & Domain Probe */
+  .upload-mode-tabs {
+    display: flex;
+    width: 100%;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .upload-mode-btn {
+    flex: 1;
+    padding: 9px 8px;
+    font-size: 12px;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .upload-zone-wrapper {
+    padding: 14px;
+    border-radius: 8px;
+  }
+
+  .dropzone-inner {
+    padding: 24px 12px;
+  }
+
+  .dropzone-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .dropzone-title {
+    font-size: 13.5px;
+  }
+
+  .dropzone-subtitle {
+    font-size: 11.5px;
+  }
+
+  .upload-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding-top: 14px;
+    margin-top: 14px;
+  }
+
+  .upload-options-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .upload-btn-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .upload-btn-group button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Domain Probe Box */
+  .domain-probe-box {
+    padding: 16px 12px;
+  }
+
+  .domain-input-row {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .domain-input-field {
+    width: 100%;
+    font-size: 13px;
+    box-sizing: border-box;
+  }
+
+  .domain-probe-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Executive Summary Briefing */
+  .executive-summary-card {
+    padding: 16px 14px;
+  }
+
+  .exec-headline-text {
+    font-size: 15px;
+  }
+
+  .exec-target-subtext {
+    font-size: 11.5px;
+    word-break: break-word;
+  }
+
+  .exec-actions-wrap {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .exec-actions-wrap button {
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+    font-size: 11px !important;
+    padding: 7px 8px !important;
+    box-sizing: border-box;
+  }
+
+  .exec-metrics-strip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .exec-metric-val {
+    font-size: 14px;
+  }
+
+  /* Posture & KPI Stats */
+  .stats-grid-interactive {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .stat-kpi-card {
+    padding: 14px 12px;
+    border-radius: 6px;
+  }
+
+  .kpi-value, .score-number {
+    font-size: 22px;
+  }
+
+  .kpi-subtext {
+    font-size: 11px;
+  }
+
+  /* Charts Section */
+  .charts-section-grid-4 {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .chart-card {
+    padding: 14px 12px;
+    overflow: hidden;
+  }
+
+  /* Session Cards & Filters */
+  .sessions-filter-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .session-card-modern {
+    border-radius: 6px;
+  }
+
+  .session-card-summary {
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .session-left-meta {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .network-flow-text {
+    font-size: 11.5px;
+    flex-wrap: wrap;
+    word-break: break-all;
+  }
+
+  .session-right-meta {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Table Styles */
+  .matrix-table th,
+  .matrix-table td {
+    padding: 10px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* Live Sniffer Tab */
+  .live-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 12px;
+  }
+
+  .live-control-item {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+  }
+
+  .live-control-item select,
+  .live-control-item input,
+  .live-control-buttons button {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  .live-streaming-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .live-terminal-container {
+    height: 360px;
+    max-width: 100%;
+  }
+
+  .live-terminal-body {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .live-packet-row {
+    min-width: 320px;
+    font-size: 10.5px;
+  }
+
+  /* PQC Radar Tab */
+  .pqc-hndl-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  /* Compliance Tab */
+  .compliance-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .table-toolbar .search-input-wrapper {
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  .filter-chips-group {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* Modals & Dialogs */
+  .modal-backdrop {
+    padding: 8px;
+  }
+
+  .modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 8px;
+    max-height: 94vh;
+  }
+
+  .modal-body {
+    padding: 14px 12px;
+    max-height: calc(94vh - 52px);
+  }
+
+  .compare-modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .compare-grid {
+    grid-template-columns: 1fr 36px 1fr;
+    padding: 14px 10px;
+  }
+
+  .compare-metric-row {
+    grid-template-columns: 1fr auto 1fr;
+    gap: 4px;
+  }
+
+  .compare-metric-label {
+    grid-column: 1 / -1;
+    order: -1;
+    text-align: left;
+    margin-bottom: 2px;
+  }
+}
+
+/* Extra Compact Mobile Devices (<= 480px, e.g. iPhone SE, Galaxy S) */
+@media (max-width: 480px) {
+  .app-container {
+    padding: 8px 8px 75px;
+  }
+
+  .brand-title-group h1 {
+    font-size: 16px;
+  }
+
+  .brand-title-group .brand-version {
+    padding: 1px 5px;
+    font-size: 9px;
+  }
+
+  .stats-grid-interactive {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .exec-metrics-strip {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .exec-actions-wrap button {
+    flex: 1 1 100%;
+  }
+
+  .pqc-hndl-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .live-packet-row {
+    font-size: 9.5px;
+  }
+}
