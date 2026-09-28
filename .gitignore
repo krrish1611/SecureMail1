@@ -19,6 +19,10 @@ __pycache__/
 # Frontend & Node
 node_modules/
 dist/
+.vite/
+
+# Deprecated/Wrapper directory
+OneDrive/
 
 # Output & Databases
 output/
