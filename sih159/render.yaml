@@ -3,7 +3,7 @@ services:
     name: securemailscope
     runtime: docker
     plan: free
-    rootDir: OneDrive/Desktop/sih159
+    rootDir: sih159
     dockerfilePath: Dockerfile
     dockerContext: .
     healthCheckPath: /api/health

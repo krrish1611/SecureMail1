@@ -1,3 +1,12 @@
+# Virtual environment & Python cache
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
 # AI Agent customizations (local)
 .agents/
 .gemini/
@@ -6,6 +15,20 @@
 .env
 .env.*
 !.env.example
+
+# Frontend & Node
+node_modules/
+dist/
+
+# Output & Databases
+output/
+*.db
+reports/generated/
+sample_traffic_report.*
+
+# ML saved models
+ml/saved_models/
+!ml/saved_models/.gitkeep
 
 # IDE & Editors
 .vscode/
