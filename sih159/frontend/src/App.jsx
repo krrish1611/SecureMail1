@@ -29,9 +29,10 @@ const VERDICT_COLORS = {
   'N/A': '#767270'
 }
 
-// In combined mode, frontend and backend run together on the same host and port.
-// Leave baseURL empty/relative so all /api requests route directly to the backend.
-axios.defaults.baseURL = ''
+// Configure API base URL: defaults to empty string so requests route through Netlify /api proxy,
+// or uses VITE_BACKEND_URL if explicitly configured in environment variables.
+const BACKEND_BASE_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '')
+axios.defaults.baseURL = BACKEND_BASE_URL
 
 // Add axios response interceptor to catch any accidental HTML responses returned from misrouted endpoints
 axios.interceptors.response.use(
@@ -1236,9 +1237,16 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
       return
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.host
-    const wsUrl = `${protocol}//${host}/api/ws/live`
+    let wsUrl = ''
+    if (BACKEND_BASE_URL) {
+      const wsProtocol = BACKEND_BASE_URL.startsWith('https') ? 'wss:' : 'ws:'
+      const wsHost = BACKEND_BASE_URL.replace(/^https?:\/\//, '')
+      wsUrl = `${wsProtocol}//${wsHost}/api/ws/live`
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const host = window.location.host
+      wsUrl = `${protocol}//${host}/api/ws/live`
+    }
     const ws = new WebSocket(wsUrl)
     wsRef.current = ws
 
