@@ -104,6 +104,15 @@ export default function Root() {
   }
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('sms_current_view', currentView)
+      if (currentView === 'app' && window.location.hash !== '#/app') {
+        window.location.hash = '#/app'
+      }
+    }
+  }, [currentView])
+
+  useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash
       if (hash === '#/app' && currentView !== 'app' && !isTransitioningRef.current) {
@@ -116,6 +125,7 @@ export default function Root() {
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [currentView])
+
 
   return (
     <div className={`root-view-wrapper ${theme === 'light' ? 'theme-light' : 'theme-dark'}`}>

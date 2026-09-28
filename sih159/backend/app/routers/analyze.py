@@ -48,6 +48,27 @@ router = APIRouter(prefix="/api", tags=["analysis"])
 _jobs = {}   # job_id -> {"sessions": [...], "pcap": str, "target_name": str}
 
 
+def _resolve_job(job_id: str) -> Optional[dict]:
+    """Retrieve job from active memory cache, or fall back to SQLite history database."""
+    job = _jobs.get(job_id)
+    if job:
+        return job
+    hist = get_scan(job_id)
+    if hist and hist.get("payload"):
+        p = hist["payload"]
+        _jobs[job_id] = {
+            "sessions": [],
+            "sessions_data": p.get("sessions", []),
+            "pcap": p.get("target_name", "historical"),
+            "target_name": p.get("target_name", "historical"),
+            "email_auth": p.get("email_auth"),
+            "overall": p.get("overall"),
+            "compliance": p.get("compliance"),
+        }
+        return _jobs[job_id]
+    return None
+
+
 def _overall_stats(sessions) -> OverallStats:
     total = len(sessions)
     encrypted = sum(1 for s in sessions if s.encrypted)
@@ -237,39 +258,97 @@ async def analyze_pcap(file: UploadFile = File(...), use_ml: bool = True):
 
 @router.get("/jobs/{job_id}/summary", response_model=List[SessionSummary])
 async def get_sessions(job_id: str):
-    job = _jobs.get(job_id)
+    job = _resolve_job(job_id)
     if not job:
         raise HTTPException(404, "Job not found")
-    return [_session_summary(s) for s in job["sessions"]]
+    if job.get("sessions"):
+        return [_session_summary(s) for s in job["sessions"]]
+    if job.get("sessions_data"):
+        return [
+            SessionSummary(
+                session_id=s.get("id") or s.get("session_id", ""),
+                protocol=s.get("protocol", "unknown"),
+                server_ip=s.get("server_ip", ""),
+                server_port=s.get("server_port", 0),
+                client_ip=s.get("client_ip", ""),
+                client_port=s.get("client_port", 0),
+                encrypted=s.get("encrypted", False),
+                plaintext=s.get("plaintext", False),
+                starttls=s.get("starttls", False),
+                starttls_stripped=s.get("starttls_stripped", False),
+                posture_score=s.get("posture_score", 0.0),
+                risk_label=s.get("risk_label", "unknown"),
+                finding_count=s.get("finding_count", 0),
+                severity_summary=s.get("severity_summary", {}),
+            )
+            for s in job["sessions_data"]
+        ]
+    return []
 
 
 @router.get("/jobs/{job_id}/sessions/{session_id}", response_model=SessionDetail)
 async def get_session_detail(job_id: str, session_id: str):
-    job = _jobs.get(job_id)
+    job = _resolve_job(job_id)
     if not job:
         raise HTTPException(404, "Job not found")
-    for s in job["sessions"]:
+    for s in job.get("sessions", []):
         if s.id == session_id:
             return _session_detail(s)
+    for s in job.get("sessions_data", []):
+        sid = s.get("id") or s.get("session_id")
+        if sid == session_id:
+            return SessionDetail(
+                session_id=sid,
+                protocol=s.get("protocol"),
+                server_ip=s.get("server_ip"),
+                server_port=s.get("server_port"),
+                client_ip=s.get("client_ip"),
+                client_port=s.get("client_port"),
+                encrypted=s.get("encrypted", False),
+                plaintext=s.get("plaintext", False),
+                starttls=s.get("starttls", False),
+                starttls_stripped=s.get("starttls_stripped", False),
+                posture_score=s.get("posture_score"),
+                risk_label=s.get("risk_label", "unknown"),
+                severity_summary=s.get("severity_summary", {}),
+            )
     raise HTTPException(404, "Session not found")
 
 
 @router.get("/jobs/{job_id}/overall", response_model=OverallStats)
 async def get_overall(job_id: str):
-    job = _jobs.get(job_id)
+    job = _resolve_job(job_id)
     if not job:
         raise HTTPException(404, "Job not found")
-    return _overall_stats(job["sessions"])
+    if job.get("sessions"):
+        return _overall_stats(job["sessions"])
+    if job.get("overall"):
+        ov = job["overall"]
+        return OverallStats(
+            total_sessions=ov.get("total_sessions", 0),
+            encrypted_sessions=ov.get("encrypted_sessions", 0),
+            plaintext_sessions=ov.get("plaintext_sessions", 0),
+            avg_posture_score=ov.get("avg_posture_score", 0.0),
+            severity_counts=ov.get("severity_counts", {}),
+            anomalies=ov.get("anomalies", 0),
+            protocols=ov.get("protocols", {}),
+        )
+    raise HTTPException(404, "Overall stats not found")
 
 
 @router.get("/jobs/{job_id}/compliance", response_model=ComplianceReportModel)
 async def get_compliance(job_id: str):
     """Return the full compliance matrix for all sessions in a job."""
-    job = _jobs.get(job_id)
+    job = _resolve_job(job_id)
     if not job:
         raise HTTPException(404, "Job not found")
-    report = evaluate_compliance_all(job["sessions"])
-    return compliance_report_to_dict(report)
+    if job.get("sessions"):
+        report = evaluate_compliance_all(job["sessions"])
+        return compliance_report_to_dict(report)
+    if job.get("compliance"):
+        return job["compliance"]
+    raise HTTPException(404, "Compliance data not found")
+
 
 
 @router.get("/jobs/{job_id}/report/{fmt}")
@@ -1578,12 +1657,17 @@ Write-Host "[✓] Exchange TLS hardening applied. Restart required for SChannel 
 @router.get("/jobs/{job_id}/remediate", response_model=RemediateResponse)
 async def get_remediate(job_id: str):
     """Aggregate detected weaknesses across all sessions and generate multi-daemon hardening configs."""
-    job = _jobs.get(job_id)
+    job = _resolve_job(job_id)
     if not job:
         raise HTTPException(404, "Job not found")
     sessions = job.get("sessions", [])
     if not sessions:
-        raise HTTPException(404, "No sessions found for this job")
+        res_session, res_name = _resolve_hardening_session(job_id)
+        if res_session:
+            sessions = [res_session]
+        else:
+            raise HTTPException(404, "No sessions found for this job")
+
 
     # Aggregate unique issues
     issue_map = {}  # id -> RemediateIssue
@@ -1653,9 +1737,10 @@ async def get_remediate(job_id: str):
 @router.get("/jobs/{job_id}/email-compliance", response_model=EmailComplianceResponse)
 async def get_email_compliance(job_id: str):
     """Return structured email protocol compliance matrix (MTA-STS, DANE, BIMI, SPF, DMARC, DKIM)."""
-    job = _jobs.get(job_id)
+    job = _resolve_job(job_id)
     if not job:
         raise HTTPException(404, "Job not found")
+
 
     sessions = job.get("sessions", [])
     email_auth_data = job.get("email_auth")

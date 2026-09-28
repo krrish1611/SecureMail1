@@ -271,7 +271,29 @@ function ComparisonView({ scans, onClose }) {
   )
 }
 
+// Storage persistence keys and helpers for active scan & analysis data
+const STORAGE_KEYS = {
+  ACTIVE_JOB_ID: 'sms_active_job_id',
+  ACTIVE_SCAN_DATA: 'sms_active_scan_data',
+  ACTIVE_TAB: 'sms_active_tab',
+  TARGET_DOMAIN: 'sms_target_domain',
+  SCAN_MODE: 'sms_scan_mode',
+}
+
+const loadStoredScanData = () => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEYS.ACTIVE_SCAN_DATA) || localStorage.getItem(STORAGE_KEYS.ACTIVE_SCAN_DATA)
+    if (raw) return JSON.parse(raw)
+  } catch (err) {
+    console.warn('Could not parse stored scan data:', err)
+  }
+  return null
+}
+
 export default function App({ theme: propTheme, toggleTheme: propToggleTheme }) {
+  const savedScan = useMemo(() => loadStoredScanData(), [])
+
   const [internalTheme, setInternalTheme] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('sms_landing_theme') || 'light'
@@ -292,17 +314,26 @@ export default function App({ theme: propTheme, toggleTheme: propToggleTheme }) 
     }
   }
 
-  // Core Data State
+  // Core Data State initialized with stored scan data if present
   const [file, setFile] = useState(null)
   const [useML, setUseML] = useState(true)
   const [maxSessions, setMaxSessions] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [jobId, setJobId] = useState(null)
-  const [overall, setOverall] = useState(null)
-  const [sessions, setSessions] = useState([])
+  const [jobId, setJobId] = useState(() => {
+    return (
+      savedScan?.jobId ||
+      savedScan?.job_id ||
+      (typeof window !== 'undefined'
+        ? sessionStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID) || localStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID)
+        : null) ||
+      null
+    )
+  })
+  const [overall, setOverall] = useState(() => savedScan?.overall || null)
+  const [sessions, setSessions] = useState(() => (Array.isArray(savedScan?.sessions) ? savedScan.sessions : []))
   const [expandedSessions, setExpandedSessions] = useState(new Set())
-  const [detailCache, setDetailCache] = useState({})
+  const [detailCache, setDetailCache] = useState(() => savedScan?.detailCache || {})
   const [activeTab, setActiveTab] = useState(() => {
     const saved = typeof window !== 'undefined' && sessionStorage.getItem('sms_active_tab')
     return saved || 'analysis'
@@ -319,10 +350,11 @@ export default function App({ theme: propTheme, toggleTheme: propToggleTheme }) 
   const [sortOption, setSortOption] = useState('score_asc')
 
   // Compliance State
-  const [compliance, setCompliance] = useState(null)
+  const [compliance, setCompliance] = useState(() => savedScan?.compliance || null)
   const [complianceLoading, setComplianceLoading] = useState(false)
   const [complianceSearch, setComplianceSearch] = useState('')
   const [complianceStatusFilter, setComplianceStatusFilter] = useState('ALL')
+
 
   // Tools & Diagnostics State
   const [interfaces, setInterfaces] = useState([])
@@ -377,12 +409,12 @@ export default function App({ theme: propTheme, toggleTheme: propToggleTheme }) 
   const [webhookFlash, setWebhookFlash] = useState(false)
 
   // Standout Features State: Domain Probe, Executive Summary, Email Auth, Trends & History
-  const [scanMode, setScanMode] = useState('pcap') // 'pcap' | 'domain'
-  const [targetDomain, setTargetDomain] = useState('')
+  const [scanMode, setScanMode] = useState(() => savedScan?.scanMode || (typeof window !== 'undefined' ? sessionStorage.getItem(STORAGE_KEYS.SCAN_MODE) : 'pcap') || 'pcap')
+  const [targetDomain, setTargetDomain] = useState(() => savedScan?.targetDomain || (typeof window !== 'undefined' ? sessionStorage.getItem(STORAGE_KEYS.TARGET_DOMAIN) : '') || '')
   const [probingDomain, setProbingDomain] = useState(false)
   const [domainProbeStatus, setDomainProbeStatus] = useState('')
-  const [emailAuth, setEmailAuth] = useState(null)
-  const [executiveSummary, setExecutiveSummary] = useState(null)
+  const [emailAuth, setEmailAuth] = useState(() => savedScan?.emailAuth || savedScan?.email_auth || null)
+  const [executiveSummary, setExecutiveSummary] = useState(() => savedScan?.executiveSummary || null)
   const [execSummaryLoading, setExecSummaryLoading] = useState(false)
   const [showRoadmap, setShowRoadmap] = useState(false)
   const [historyScans, setHistoryScans] = useState([])
@@ -395,17 +427,18 @@ export default function App({ theme: propTheme, toggleTheme: propToggleTheme }) 
   const [compareModalOpen, setCompareModalOpen] = useState(false)
 
   // PQC Readiness Radar State
-  const [pqcRadar, setPqcRadar] = useState(null)
+  const [pqcRadar, setPqcRadar] = useState(() => savedScan?.pqcRadar || null)
   const [pqcRadarLoading, setPqcRadarLoading] = useState(false)
 
   // Email Protocol Compliance Matrix State
-  const [emailCompliance, setEmailCompliance] = useState(null)
+  const [emailCompliance, setEmailCompliance] = useState(() => savedScan?.emailCompliance || null)
   const [emailComplianceLoading, setEmailComplianceLoading] = useState(false)
 
   // Remediate Tab State
-  const [remediateData, setRemediateData] = useState(null)
+  const [remediateData, setRemediateData] = useState(() => savedScan?.remediateData || null)
   const [remediateLoading, setRemediateLoading] = useState(false)
   const [activeRemediateTab, setActiveRemediateTab] = useState('postfix')
+
 
   // MITM Simulation State
   const [mitmData, setMitmData] = useState(null)
@@ -447,13 +480,110 @@ export default function App({ theme: propTheme, toggleTheme: propToggleTheme }) 
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // On mount: if active tab was restored from session, load its data
+  // Persist active scan data whenever it changes
   useEffect(() => {
-    if (activeTab === 'compliance') loadCompliance()
+    if (typeof window === 'undefined') return
+    if (jobId) {
+      sessionStorage.setItem(STORAGE_KEYS.ACTIVE_JOB_ID, jobId)
+      try {
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_JOB_ID, jobId)
+      } catch (e) {}
+
+      const bundle = {
+        jobId,
+        overall,
+        sessions,
+        detailCache,
+        emailAuth,
+        executiveSummary,
+        pqcRadar,
+        compliance,
+        emailCompliance,
+        remediateData,
+        targetDomain,
+        scanMode,
+        timestamp: Date.now()
+      }
+
+      try {
+        const serialized = JSON.stringify(bundle)
+        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_SCAN_DATA, serialized)
+        try {
+          localStorage.setItem(STORAGE_KEYS.ACTIVE_SCAN_DATA, serialized)
+        } catch (e) {}
+      } catch (e) {
+        try {
+          const compact = {
+            jobId,
+            overall,
+            sessions: sessions ? sessions.slice(0, 100) : [],
+            emailAuth,
+            executiveSummary,
+            pqcRadar,
+            compliance,
+            emailCompliance,
+            remediateData,
+            targetDomain,
+            scanMode,
+            timestamp: Date.now()
+          }
+          sessionStorage.setItem(STORAGE_KEYS.ACTIVE_SCAN_DATA, JSON.stringify(compact))
+        } catch (err) {
+          console.warn('Unable to persist scan bundle:', err)
+        }
+      }
+    } else {
+      sessionStorage.removeItem(STORAGE_KEYS.ACTIVE_JOB_ID)
+      sessionStorage.removeItem(STORAGE_KEYS.ACTIVE_SCAN_DATA)
+      try {
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_JOB_ID)
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_SCAN_DATA)
+      } catch (e) {}
+    }
+  }, [jobId, overall, sessions, detailCache, emailAuth, executiveSummary, pqcRadar, compliance, emailCompliance, remediateData, targetDomain, scanMode])
+
+  // On mount: if active tab was restored from session, load its data and rehydrate job if needed
+  useEffect(() => {
+    const currentId = jobId || (typeof window !== 'undefined' ? (sessionStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID) || localStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID)) : null)
+
+    if (currentId) {
+      if (!sessions || sessions.length === 0 || !overall) {
+        (async () => {
+          try {
+            const sumRes = await axios.get(`/api/jobs/${currentId}/summary`).catch(() => null)
+            if (sumRes && Array.isArray(sumRes.data) && sumRes.data.length > 0) {
+              setSessions(sumRes.data)
+              const ovRes = await axios.get(`/api/jobs/${currentId}/overall`).catch(() => null)
+              if (ovRes && ovRes.data) setOverall(ovRes.data)
+              loadExecutiveSummary(currentId)
+              loadPqcRadar(currentId, sumRes.data)
+              loadEmailCompliance(currentId)
+              return
+            }
+            const histRes = await axios.get(`/api/history/${currentId}`).catch(() => null)
+            if (histRes && histRes.data && histRes.data.payload) {
+              const p = histRes.data.payload
+              if (p.overall) setOverall(p.overall)
+              if (p.sessions) setSessions(p.sessions)
+              if (p.email_auth) setEmailAuth(p.email_auth)
+              if (p.compliance) setCompliance(p.compliance)
+              loadExecutiveSummary(currentId)
+              loadPqcRadar(currentId, p.sessions || [])
+              loadEmailCompliance(currentId)
+            }
+          } catch (e) {
+            console.warn('Rehydration check failed:', e)
+          }
+        })()
+      }
+    }
+
+    if (activeTab === 'compliance') loadCompliance(currentId)
     if (activeTab === 'live') loadInterfaces()
     if (activeTab === 'ml') { loadMlStatus(); loadHistory(); }
     if (activeTab === 'diagnostics') loadDiagnostics()
     if (activeTab === 'history') { loadHistory(); loadTrends(); }
+    if (activeTab === 'remediate' && currentId) loadRemediate(currentId)
     if (activeTab === 'mitm') loadMitmSimulation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -623,10 +753,12 @@ New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProvi
 
 
   // Process completed job
-  const loadExecutiveSummary = async (id) => {
+  const loadExecutiveSummary = async (id = null) => {
+    const targetId = id || jobId || (typeof window !== 'undefined' ? (sessionStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID) || localStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID)) : null)
+    if (!targetId) return
     setExecSummaryLoading(true)
     try {
-      const resp = await axios.get(`/api/jobs/${id}/executive-summary`)
+      const resp = await axios.get(`/api/jobs/${targetId}/executive-summary`)
       setExecutiveSummary(resp.data)
     } catch (e) {
       console.error('Failed to load executive summary:', e)
@@ -635,10 +767,12 @@ New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProvi
     }
   }
 
-  const loadPqcRadar = async (id, sessionsList = null) => {
+  const loadPqcRadar = async (id = null, sessionsList = null) => {
+    const targetId = id || jobId || (typeof window !== 'undefined' ? (sessionStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID) || localStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID)) : null)
+    if (!targetId) return
     setPqcRadarLoading(true)
     try {
-      const resp = await axios.get(`/api/jobs/${id}/pqc-radar`)
+      const resp = await axios.get(`/api/jobs/${targetId}/pqc-radar`)
       if (resp.data && typeof resp.data === 'object' && resp.data.hndl_breakdown) {
         setPqcRadar(resp.data)
         return
@@ -648,6 +782,7 @@ New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProvi
     } finally {
       setPqcRadarLoading(false)
     }
+
 
     // Client-side fallback generator from sessions list
     const currentSessions = Array.isArray(sessionsList) ? sessionsList : (Array.isArray(sessions) ? sessions : [])
@@ -707,10 +842,12 @@ New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProvi
     })
   }
 
-  const loadEmailCompliance = async (id, targetDom = null) => {
+  const loadEmailCompliance = async (id = null, targetDom = null) => {
+    const targetId = id || jobId || (typeof window !== 'undefined' ? (sessionStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID) || localStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID)) : null)
+    if (!targetId) return
     setEmailComplianceLoading(true)
     try {
-      const resp = await axios.get(`/api/jobs/${id}/email-compliance`)
+      const resp = await axios.get(`/api/jobs/${targetId}/email-compliance`)
       if (resp.data && typeof resp.data === 'object' && Array.isArray(resp.data.checks)) {
         setEmailCompliance(resp.data)
         return
@@ -737,10 +874,12 @@ New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProvi
     })
   }
 
-  const loadRemediate = async (id) => {
+  const loadRemediate = async (id = null) => {
+    const targetId = id || jobId || (typeof window !== 'undefined' ? (sessionStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID) || localStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID)) : null)
+    if (!targetId) return
     setRemediateLoading(true)
     try {
-      const resp = await axios.get(`/api/jobs/${id}/remediate`)
+      const resp = await axios.get(`/api/jobs/${targetId}/remediate`)
       if (resp.data && typeof resp.data === 'object' && Array.isArray(resp.data.issues)) {
         setRemediateData(resp.data)
         return
@@ -748,6 +887,7 @@ New-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProvi
     } catch (e) {
       console.warn('Backend remediate endpoint not available, generating fallback', e)
     } finally {
+
       setRemediateLoading(false)
     }
 
@@ -878,11 +1018,13 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
       loadExecutiveSummary(data.job_id)
       loadPqcRadar(data.job_id, fetchedSessions)
       loadEmailCompliance(data.job_id)
+      loadCompliance(data.job_id)
     } catch (err) {
       console.error('Failed to fetch summary sessions:', err)
       loadPqcRadar(data.job_id, [])
     }
   }
+
 
   const doProbeDomain = async (customDomain = null) => {
     const domain = (customDomain || targetDomain).trim()
@@ -947,13 +1089,17 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
       setOverall(p.overall || null)
       setSessions(p.sessions || [])
       setEmailAuth(p.email_auth || null)
+      if (p.compliance) setCompliance(p.compliance)
       loadExecutiveSummary(scanId)
+      loadPqcRadar(scanId, p.sessions || [])
+      loadEmailCompliance(scanId)
     } catch (e) {
       setError('Failed to reload historical scan: ' + (e.response?.data?.detail || e.message))
     } finally {
       setLoading(false)
     }
   }
+
 
   const deleteHistoryScan = async (scanId) => {
     try {
@@ -1053,11 +1199,12 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
   }
 
   // Compliance Matrix Loader
-  const loadCompliance = async () => {
-    if (compliance || !jobId) return
+  const loadCompliance = async (targetId = null) => {
+    const id = targetId || jobId || (typeof window !== 'undefined' ? (sessionStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID) || localStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID)) : null)
+    if (compliance || !id) return
     setComplianceLoading(true)
     try {
-      const resp = await axios.get(`/api/jobs/${jobId}/compliance`)
+      const resp = await axios.get(`/api/jobs/${id}/compliance`)
       setCompliance(resp.data)
     } catch (e) {
       console.error('Failed to load compliance:', e)
@@ -1065,6 +1212,7 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
       setComplianceLoading(false)
     }
   }
+
 
   // Tools Loaders
   const loadInterfaces = async () => {
@@ -1344,14 +1492,16 @@ Write-Output "TLS hardening applied to Exchange Transport Connectors."`
   const handleTabSwitch = (tab) => {
     setActiveTab(tab)
     sessionStorage.setItem('sms_active_tab', tab)
-    if (tab === 'compliance') loadCompliance()
+    const currentId = jobId || (typeof window !== 'undefined' ? (sessionStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID) || localStorage.getItem(STORAGE_KEYS.ACTIVE_JOB_ID)) : null)
+    if (tab === 'compliance') loadCompliance(currentId)
     if (tab === 'live') loadInterfaces()
     if (tab === 'ml') { loadMlStatus(); loadHistory(); }
     if (tab === 'diagnostics') loadDiagnostics()
     if (tab === 'history') { loadHistory(); loadTrends(); }
-    if (tab === 'remediate' && jobId) loadRemediate(jobId)
+    if (tab === 'remediate' && currentId) loadRemediate(currentId)
     if (tab === 'mitm') loadMitmSimulation()
   }
+
 
   // Session Accordion Toggle
   const toggleSession = async (sessionId) => {
