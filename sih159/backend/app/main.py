@@ -38,6 +38,17 @@ def health():
     return {"status": "ok", "tool": "SecureMailScope", "version": "0.1.0"}
 
 
+@app.get("/")
+def root():
+    return {
+        "status": "online",
+        "service": "SecureMailScope API",
+        "version": "0.1.0",
+        "health": "/api/health",
+        "docs": "/docs"
+    }
+
+
 
 # Serve React build if it exists
 if os.path.isdir(FRONTEND_DIR):
