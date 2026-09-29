@@ -56,6 +56,11 @@ FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "
 def health():
     return {"status": "ok", "tool": "SecureMailScope", "version": "0.1.0"}
 
+from core.history import DB_DIR
+@app.get("/api/debug")
+def debug():
+    return {"db_dir": DB_DIR}
+
 
 @app.get("/")
 @app.get("/api")
