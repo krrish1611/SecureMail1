@@ -21,7 +21,25 @@ from core.models import Session, Severity, SEVERITY_NAMES
 from ml.features import FEATURE_NAMES, extract_features, severity_weight
 from ml.training_data import generate_classified, generate_baseline, load_from_csv
 
-MODEL_DIR = os.path.join(os.path.dirname(__file__), "saved_models")
+_DEFAULT_MODEL_DIR = os.path.join(os.path.dirname(__file__), "saved_models")
+
+# Vercel Lambda mounts /var/task as read-only; /tmp is the only writable path.
+# Detect read-only filesystem and redirect model persistence to /tmp.
+def _resolve_model_dir() -> str:
+    d = _DEFAULT_MODEL_DIR
+    try:
+        os.makedirs(d, exist_ok=True)
+        test_file = os.path.join(d, ".test_write")
+        with open(test_file, "w") as f:
+            f.write("test")
+        os.remove(test_file)
+        return d
+    except OSError:
+        fallback = os.path.join("/tmp", "ml_saved_models")
+        os.makedirs(fallback, exist_ok=True)
+        return fallback
+
+MODEL_DIR = _resolve_model_dir()
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.yml")
 
 

@@ -14,6 +14,17 @@ app = FastAPI(
     version="0.1.0",
 )
 
+from fastapi.responses import JSONResponse
+import traceback
+from fastapi import Request
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "error_type": type(exc).__name__, "error_msg": str(exc), "traceback": traceback.format_exc()}
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -44,6 +55,11 @@ FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "
 @app.head("/ping")
 def health():
     return {"status": "ok", "tool": "SecureMailScope", "version": "0.1.0"}
+
+from core.history import DB_DIR
+@app.get("/api/debug")
+def debug():
+    return {"db_dir": DB_DIR}
 
 
 @app.get("/")

@@ -15,7 +15,23 @@ from typing import List
 from core.models import Session, Finding, Severity, SEVERITY_NAMES
 from core.compliance import evaluate_compliance_all, compliance_report_to_dict
 
-REPORTS_DIR = os.path.join(os.path.dirname(__file__), "generated")
+_DEFAULT_REPORTS_DIR = os.path.join(os.path.dirname(__file__), "generated")
+
+def _resolve_reports_dir() -> str:
+    d = _DEFAULT_REPORTS_DIR
+    try:
+        os.makedirs(d, exist_ok=True)
+        test_file = os.path.join(d, ".test_write")
+        with open(test_file, "w") as f:
+            f.write("test")
+        os.remove(test_file)
+        return d
+    except OSError:
+        fallback = os.path.join("/tmp", "securemailscope_reports")
+        os.makedirs(fallback, exist_ok=True)
+        return fallback
+
+REPORTS_DIR = _resolve_reports_dir()
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
 
