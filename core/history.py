@@ -22,6 +22,10 @@ def _resolve_db_dir() -> str:
     d = _DEFAULT_DB_DIR
     try:
         os.makedirs(d, exist_ok=True)
+        test_file = os.path.join(d, ".test_write")
+        with open(test_file, "w") as f:
+            f.write("test")
+        os.remove(test_file)
         return d
     except OSError:
         fallback = os.path.join("/tmp", "securemailscope_output")

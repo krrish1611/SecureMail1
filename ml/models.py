@@ -29,6 +29,10 @@ def _resolve_model_dir() -> str:
     d = _DEFAULT_MODEL_DIR
     try:
         os.makedirs(d, exist_ok=True)
+        test_file = os.path.join(d, ".test_write")
+        with open(test_file, "w") as f:
+            f.write("test")
+        os.remove(test_file)
         return d
     except OSError:
         fallback = os.path.join("/tmp", "ml_saved_models")
